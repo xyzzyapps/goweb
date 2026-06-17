@@ -50,6 +50,24 @@ func TestChunkTable_Duplicates(t *testing.T) {
 	}
 }
 
+func TestMerge_Concatenate(t *testing.T) {
+	a := &Chunk{Name: "x", Body: "part1"}
+	b := &Chunk{Name: "x", Body: "part2"}
+	a.Merge(b)
+	if a.Body != "part1\npart2" {
+		t.Errorf("expected 'part1\\npart2', got %q", a.Body)
+	}
+}
+
+func TestMerge_Override(t *testing.T) {
+	a := &Chunk{Name: "x", Body: "original"}
+	b := &Chunk{Name: "x", Body: "replacement", Override: true}
+	a.Merge(b)
+	if a.Body != "replacement" {
+		t.Errorf("expected 'replacement', got %q", a.Body)
+	}
+}
+
 func TestChunksByFile(t *testing.T) {
 	doc := &Document{
 		Chunks: []*Chunk{

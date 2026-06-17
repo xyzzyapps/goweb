@@ -27,11 +27,38 @@ type Chunk struct {
 	// Empty means no pipe transformation.
 	PipeCmd string
 
+	// Override, if true, means this chunk replaces (rather than appends to)
+	// any previous definition with the same name.
+	Override bool
+
 	// Line is the 1-based source line where this chunk was defined.
 	Line int
 
 	// Source is the path of the source file this chunk came from.
 	Source string
+}
+
+// Merge combines two chunks with the same name.
+// If the new chunk has Override=true, it replaces the existing one entirely.
+// Otherwise, the bodies are concatenated with a newline separator.
+// Attributes from the first definition are kept.
+func (c *Chunk) Merge(other *Chunk) {
+	if other.Override {
+		c.Body = other.Body
+		c.Line = other.Line
+		c.Source = other.Source
+		c.Language = other.Language
+		return
+	}
+	if c.Body != "" && other.Body != "" {
+		c.Body += "\n" + other.Body
+	} else if other.Body != "" {
+		c.Body = other.Body
+	}
+	// Keep language from the first definition unless it was empty
+	if c.Language == "" && other.Language != "" {
+		c.Language = other.Language
+	}
 }
 
 // Document represents the full result of parsing one or more literate

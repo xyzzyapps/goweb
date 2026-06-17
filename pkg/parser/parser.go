@@ -43,8 +43,9 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 					PipeCmd:  chunkDef.pipeCmd,
 					Line:     chunkDef.startLine,
 					Source:   sourcePath,
+					Override: chunkDef.override,
 				}
-				chunks = append(chunks, chunk)
+				chunks = addChunk(chunks, chunk)
 				chunkDef = nil
 			} else {
 				chunkDef.body = append(chunkDef.body, line)
@@ -56,7 +57,9 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 		if isFenceOpen(line) {
 			if currentFence != nil {
 				// Close current fence (handles edge case of unclosed fence).
-				chunks = append(chunks, extractChunksFromFence(currentFence, sourcePath)...)
+				for _, c := range extractChunksFromFence(currentFence, sourcePath) {
+					chunks = addChunk(chunks, c)
+				}
 				currentFence = nil
 			}
 			fenceChar = getFenceString(line)
@@ -69,7 +72,9 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 		}
 
 		if currentFence != nil && isFenceClose(line, fenceChar) {
-			chunks = append(chunks, extractChunksFromFence(currentFence, sourcePath)...)
+			for _, c := range extractChunksFromFence(currentFence, sourcePath) {
+				chunks = addChunk(chunks, c)
+			}
 			currentFence = nil
 			fenceChar = ""
 			continue
@@ -94,6 +99,8 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 					chunkDef.file = v
 				case "pipe":
 					chunkDef.pipeCmd = v
+				case "override":
+					chunkDef.override = v == "true"
 				}
 			}
 			continue
@@ -102,20 +109,23 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 
 	// Handle unclosed fence at EOF.
 	if currentFence != nil {
-		chunks = append(chunks, extractChunksFromFence(currentFence, sourcePath)...)
+		for _, c := range extractChunksFromFence(currentFence, sourcePath) {
+			chunks = addChunk(chunks, c)
+		}
 	}
 
 	// Handle unclosed chunk definition at EOF.
 	if chunkDef != nil {
 		chunk := &Chunk{
-			Name:   chunkDef.name,
-			Body:   strings.Join(chunkDef.body, "\n"),
-			Line:   chunkDef.startLine,
-			Source: sourcePath,
+			Name:     chunkDef.name,
+			Body:     strings.Join(chunkDef.body, "\n"),
+			Line:     chunkDef.startLine,
+			Source:   sourcePath,
+			Override: chunkDef.override,
 		}
 		chunk.File = chunkDef.file
 		chunk.PipeCmd = chunkDef.pipeCmd
-		chunks = append(chunks, chunk)
+		chunks = addChunk(chunks, chunk)
 	}
 
 	doc.Chunks = chunks
@@ -129,6 +139,7 @@ type chunkDefinition struct {
 	body      []string
 	file      string
 	pipeCmd   string
+	override  bool
 	startLine int
 }
 
@@ -227,6 +238,19 @@ func parseFenceLanguage(line string) string {
 	return strings.TrimSpace(rest[:end])
 }
 
+// addChunk adds a chunk to the list, merging with any existing chunk
+// that has the same name. If the new chunk has Override=true, it replaces
+// the existing one. Otherwise bodies are concatenated.
+func addChunk(chunks []*Chunk, new *Chunk) []*Chunk {
+	for _, existing := range chunks {
+		if existing.Name == new.Name {
+			existing.Merge(new)
+			return chunks
+		}
+	}
+	return append(chunks, new)
+}
+
 // extractChunksFromFence extracts chunks from lines within a fenced code block.
 // It looks for <<name>>= ... >> patterns.
 func extractChunksFromFence(fence *fencedBlock, sourcePath string) []*Chunk {
@@ -288,6 +312,7 @@ func isChunkDefinitionStart(line string) bool {
 }
 
 // parseChunkHeader parses a <<name>>= file: path pipe: cmd line.
+// Also supports the bare keyword "override" (no colon).
 // Returns the chunk name and a map of attributes.
 func parseChunkHeader(line string) (name string, attrs map[string]string) {
 	attrs = make(map[string]string)
@@ -307,38 +332,43 @@ func parseChunkHeader(line string) (name string, attrs map[string]string) {
 	rest := strings.TrimSpace(line[end+3:])
 	for rest != "" {
 		rest = strings.TrimSpace(rest)
-		// Find next attribute (key: value)
+		// Colon present → key: value pair
 		colonIdx := findUnquotedColon(rest)
-		if colonIdx == -1 {
-			break
-		}
-		key := strings.TrimSpace(rest[:colonIdx])
-		rest = strings.TrimSpace(rest[colonIdx+1:])
+		if colonIdx != -1 {
+			key := strings.TrimSpace(rest[:colonIdx])
+			rest = strings.TrimSpace(rest[colonIdx+1:])
 
-		// Value is either quoted (until next quote) or unquoted (until next key: or end).
-		var value string
-		if strings.HasPrefix(rest, "\"") {
-			// Quoted value.
-			endQuote := strings.Index(rest[1:], "\"")
-			if endQuote == -1 {
-				value = rest[1:]
-				rest = ""
+			var value string
+			if strings.HasPrefix(rest, "\"") {
+				endQuote := strings.Index(rest[1:], "\"")
+				if endQuote == -1 {
+					value = rest[1:]
+					rest = ""
+				} else {
+					value = rest[1 : endQuote+1]
+					rest = strings.TrimSpace(rest[endQuote+2:])
+				}
 			} else {
-				value = rest[1 : endQuote+1]
-				rest = strings.TrimSpace(rest[endQuote+2:])
+				nextAttr := findNextAttrStart(rest)
+				if nextAttr == -1 {
+					value = strings.TrimSpace(rest)
+					rest = ""
+				} else {
+					value = strings.TrimSpace(rest[:nextAttr])
+					rest = strings.TrimSpace(rest[nextAttr:])
+				}
 			}
-		} else {
-			// Unquoted value — take until next " key:" pattern.
-			nextAttr := findNextAttrStart(rest)
-			if nextAttr == -1 {
-				value = strings.TrimSpace(rest)
-				rest = ""
-			} else {
-				value = strings.TrimSpace(rest[:nextAttr])
-				rest = strings.TrimSpace(rest[nextAttr:])
-			}
+			attrs[key] = value
+			continue
 		}
-		attrs[key] = value
+
+		// No colon → bare keyword (boolean flag).
+		// Tokenize by whitespace.
+		token := strings.Fields(rest)[0]
+		if token == "override" {
+			attrs["override"] = "true"
+		}
+		rest = ""
 	}
 
 	return name, attrs

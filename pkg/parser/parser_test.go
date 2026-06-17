@@ -49,6 +49,11 @@ func TestParseChunkHeader(t *testing.T) {
 			wantName: "main",
 			wantAtt:  map[string]string{"file": "main.go", "pipe": "gofmt"},
 		},
+		{
+			line:     "<<main>>= override",
+			wantName: "main",
+			wantAtt:  map[string]string{"override": "true"},
+		},
 	}
 	for _, tt := range tests {
 		gotName, gotAtt := parseChunkHeader(tt.line)
