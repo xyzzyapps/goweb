@@ -23,6 +23,7 @@ var (
 	dryRun         bool
 	lineDirectives bool
 	watchMode      bool
+	matchTags      string
 	outputFile     string
 	rootCmd        *cobra.Command
 )
@@ -131,6 +132,8 @@ Examples:
 		"Watch source file for changes and re-tangle automatically")
 	tangleCmd.Flags().StringVarP(&outputDir, "output-dir", "O", "",
 		"Base directory for tangled output files")
+	tangleCmd.Flags().StringVarP(&matchTags, "match", "m", "",
+		"Only tangle chunks with matching tags (comma-separated)")
 
 	weaveCmd.Flags().StringArrayVarP(&varFlags, "var", "v", nil,
 		"Set a variable (key=value, can be specified multiple times)")
@@ -166,6 +169,9 @@ func runTangle(sourcePath string, vars map[string]string, args []string) error {
 	t.DryRun = dryRun
 	t.LineDirectives = lineDirectives
 	t.OutputDir = outputDir
+	if matchTags != "" {
+		t.MatchTags = strings.Split(matchTags, ",")
+	}
 
 	if len(args) == 2 {
 		return t.TangleChunk(doc, args[1], os.Stdout)

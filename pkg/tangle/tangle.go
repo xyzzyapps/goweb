@@ -155,6 +155,10 @@ type Tangle struct {
 	// in tangled output so that errors and debug info point back to the .md source.
 	LineDirectives bool
 
+	// MatchTags, if non-empty, filters chunks by tag. Only chunks with at least
+	// one matching tag are included in the output.
+	MatchTags []string
+
 	// Stdout is where chunk output goes when no file: attribute is set
 	// or when a specific chunk is requested.
 	Stdout io.Writer
@@ -199,6 +203,37 @@ func (t *Tangle) Tangle(doc *parser.Document) error {
 
 	// Group chunks by output file.
 	byFile := doc.ChunksByFile()
+
+	// Filter chunks by match tags if specified.
+	if len(t.MatchTags) > 0 {
+		for filename, chunks := range byFile {
+			var filtered []*parser.Chunk
+			for _, c := range chunks {
+				if c.HasAnyTag(t.MatchTags) {
+					filtered = append(filtered, c)
+				}
+			}
+			if len(filtered) == 0 {
+				delete(byFile, filename)
+			} else {
+				byFile[filename] = filtered
+			}
+		}
+		// Also filter orphans.
+		if orphans, ok := byFile[""]; ok && len(orphans) > 0 {
+			var filtered []*parser.Chunk
+			for _, c := range orphans {
+				if c.HasAnyTag(t.MatchTags) {
+					filtered = append(filtered, c)
+				}
+			}
+			if len(filtered) == 0 {
+				delete(byFile, "")
+			} else {
+				byFile[""] = filtered
+			}
+		}
+	}
 
 	// Process files in sorted order for deterministic output.
 	var files []string
