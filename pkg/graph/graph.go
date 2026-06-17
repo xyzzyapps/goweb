@@ -16,6 +16,9 @@ type Graph struct {
 
 	// chunks maps chunk name to the Chunk object.
 	chunks map[string]*parser.Chunk
+
+	// vars holds user-provided variables for {{var}} substitution.
+	vars map[string]string
 }
 
 // New builds a dependency graph from a Document.
@@ -24,6 +27,14 @@ func New(doc *parser.Document) (*Graph, error) {
 	g := &Graph{
 		nodes:  make(map[string]map[string]bool),
 		chunks: make(map[string]*parser.Chunk),
+		vars:   make(map[string]string),
+	}
+
+	// Copy vars for local use.
+	if doc.Vars != nil {
+		for k, v := range doc.Vars {
+			g.vars[k] = v
+		}
 	}
 
 	for _, c := range doc.Chunks {
@@ -141,7 +152,8 @@ func (g *Graph) TopologicalSort() ([]*parser.Chunk, error) {
 }
 
 // Resolve expands all references in a chunk body recursively.
-// It returns the fully resolved body with all <<ref>> replaced by their content.
+// It returns the fully resolved body with all <<ref>> replaced by their content
+// and {{var}} variables substituted.
 // refs tracks the current expansion chain to detect circular references.
 func (g *Graph) Resolve(name string, refs map[string]bool) (string, error) {
 	if refs == nil {
@@ -201,5 +213,45 @@ func (g *Graph) Resolve(name string, refs map[string]bool) (string, error) {
 		i = end + 2
 	}
 
-	return result.String(), nil
+	// Substitute {{var}} variables in the resolved result.
+	return g.expandVars(result.String()), nil
+}
+
+// expandVars replaces {{name}} with the corresponding variable value.
+// Unknown variables are left as-is.
+func (g *Graph) expandVars(s string) string {
+	var result strings.Builder
+	i := 0
+	for i < len(s) {
+		start := strings.Index(s[i:], "{{")
+		if start == -1 {
+			result.WriteString(s[i:])
+			break
+		}
+		start += i
+		result.WriteString(s[i:start])
+
+		end := strings.Index(s[start+2:], "}}")
+		if end == -1 {
+			result.WriteString(s[start:])
+			break
+		}
+		end += start + 2
+
+		varName := strings.TrimSpace(s[start+2 : end])
+		if varName == "" {
+			result.WriteString("{{}}")
+			i = end + 2
+			continue
+		}
+
+		if val, ok := g.vars[varName]; ok {
+			result.WriteString(val)
+		} else {
+			// Variable not set — leave the placeholder as-is.
+			result.WriteString(s[start : end+2])
+		}
+		i = end + 2
+	}
+	return result.String()
 }

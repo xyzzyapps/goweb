@@ -133,6 +133,69 @@ func TestResolve_Circular(t *testing.T) {
 	}
 }
 
+func TestResolve_VariableSubstitution(t *testing.T) {
+	doc := &parser.Document{
+		Chunks: []*parser.Chunk{
+			{Name: "config", Body: "host={{HOST}}\nport={{PORT}}"},
+		},
+		Vars: map[string]string{"HOST": "localhost", "PORT": "5432"},
+	}
+	g, err := New(doc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resolved, err := g.Resolve("config", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "host=localhost\nport=5432"
+	if resolved != want {
+		t.Errorf("Resolve = %q; want %q", resolved, want)
+	}
+}
+
+func TestResolve_VariableMissing(t *testing.T) {
+	doc := &parser.Document{
+		Chunks: []*parser.Chunk{
+			{Name: "a", Body: "{{MISSING}}"},
+		},
+		Vars: map[string]string{},
+	}
+	g, err := New(doc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resolved, err := g.Resolve("a", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Unknown variables are left as-is.
+	if resolved != "{{MISSING}}" {
+		t.Errorf("Resolve = %q; want %q", resolved, "{{MISSING}}")
+	}
+}
+
+func TestResolve_VarsWithRefs(t *testing.T) {
+	doc := &parser.Document{
+		Chunks: []*parser.Chunk{
+			{Name: "greeting", Body: "{{GREETING}}"},
+			{Name: "main", Body: "<<greeting>> world"},
+		},
+		Vars: map[string]string{"GREETING": "Hello"},
+	}
+	g, err := New(doc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resolved, err := g.Resolve("main", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resolved != "Hello world" {
+		t.Errorf("Resolve = %q; want %q", resolved, "Hello world")
+	}
+}
+
 func TestResolve_Missing(t *testing.T) {
 	doc := &parser.Document{
 		Chunks: []*parser.Chunk{
