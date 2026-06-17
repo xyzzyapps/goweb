@@ -141,6 +141,10 @@ func runCommand(exeCmd, body, pipeDir string) (string, error) {
 
 // Tangle holds configuration for the tangling process.
 type Tangle struct {
+	// OutputDir is the base directory for all tangled output files.
+	// Paths in file: attributes are relative to this directory.
+	OutputDir string
+
 	// PipeDir is the working directory for pipe/exec commands.
 	PipeDir string
 
@@ -238,13 +242,15 @@ func (t *Tangle) Tangle(doc *parser.Document) error {
 		}
 
 		if t.DryRun {
+			path := t.outputPath(filename)
 			fmt.Fprintf(t.Stdout, "=== would write %s (%d bytes) ===\n%s\n",
-				filename, content.Len(), content.String())
+				path, content.Len(), content.String())
 		} else {
-			if err := writeFile(filename, content.String()); err != nil {
-				return fmt.Errorf("writing %s: %w", filename, err)
+			path := t.outputPath(filename)
+			if err := writeFile(path, content.String()); err != nil {
+				return fmt.Errorf("writing %s: %w", path, err)
 			}
-			fmt.Fprintf(t.Stdout, "wrote %s\n", filename)
+			fmt.Fprintf(t.Stdout, "wrote %s\n", path)
 		}
 	}
 
@@ -427,6 +433,14 @@ func (t *Tangle) withLineDirectives(c *parser.Chunk, content string) string {
 		return content
 	}
 	return dir + content
+}
+
+// outputPath resolves the full path for a chunk's output file.
+func (t *Tangle) outputPath(filename string) string {
+	if t.OutputDir != "" {
+		return filepath.Join(t.OutputDir, filename)
+	}
+	return filename
 }
 
 func writeFile(path, content string) error {
