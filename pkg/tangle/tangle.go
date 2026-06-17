@@ -107,7 +107,7 @@ func (sm *SessionManager) Close() {
 	defer sm.mu.Unlock()
 	for name, cmd := range sm.procs {
 		if cmd.Process != nil {
-			cmd.Process.Kill()
+			_ = cmd.Process.Kill()
 		}
 		delete(sm.procs, name)
 	}
