@@ -147,6 +147,10 @@ type Tangle struct {
 	// DryRun, if true, prints what would be written without actually writing.
 	DryRun bool
 
+	// LineDirectives, if true, inserts source-location directives (#line / //line)
+	// in tangled output so that errors and debug info point back to the .md source.
+	LineDirectives bool
+
 	// Stdout is where chunk output goes when no file: attribute is set
 	// or when a specific chunk is requested.
 	Stdout io.Writer
@@ -222,6 +226,9 @@ func (t *Tangle) Tangle(doc *parser.Document) error {
 			if err != nil {
 				return fmt.Errorf("piping chunk %q: %w", c.Name, err)
 			}
+
+			// Prepend source-location directive if enabled.
+			output = t.withLineDirectives(c, output)
 
 			content.WriteString(output)
 			// Ensure trailing newline.
@@ -365,7 +372,63 @@ func splitCommand(cmd string) []string {
 	return parts
 }
 
-// writeFile writes content to a file, creating parent directories as needed.
+// formatLineDirective returns a source-location directive for the given language.
+// Supported comment styles:
+//   - go, rust, zig, swift, kotlin, scala, dart, nim: //line "file":N
+//   - c, cpp, java, js, ts, css:                      //line "file":N
+//   - python, ruby, sh, bash, perl, r, lua, elixir:   #line N "file"
+//   - haskell, erlang:                                 -- line N
+//   - ml, ocaml:                                       (* line N *)
+//   - lisp, scheme:                                    ; line N
+//   - sql:                                             -- line N
+//   - others / unknown:                                #line N "file"
+func formatLineDirective(lang, sourceFile string, line int) string {
+	if lang == "" || sourceFile == "" || line <= 0 {
+		return ""
+	}
+
+	// Normalize source file to use forward slashes.
+	sourceFile = strings.ReplaceAll(sourceFile, "\\", "/")
+
+	// Languages using // comments.
+	slashStar := map[string]bool{
+		"go": true, "rust": true, "zig": true, "swift": true,
+		"kotlin": true, "scala": true, "dart": true, "nim": true,
+		"c": true, "cpp": true, "java": true, "javascript": true,
+		"typescript": true, "css": true, "scss": true, "less": true,
+		"vue": true, "svelte": true, "php": true, "objectivec": true,
+	}
+
+	// Languages using # comments.
+	hashComment := map[string]bool{
+		"python": true, "ruby": true, "bash": true, "sh": true,
+		"zsh": true, "perl": true, "r": true, "lua": true,
+		"elixir": true, "makefile": true, "yaml": true, "yml": true,
+		"tcl": true, "awk": true, "sed": true,
+	}
+
+	if slashStar[lang] {
+		return fmt.Sprintf("//line %q:%d\n", sourceFile, line)
+	}
+	if hashComment[lang] {
+		return fmt.Sprintf("#line %d %q\n", line, sourceFile)
+	}
+	return fmt.Sprintf("#line %d %q\n", line, sourceFile)
+}
+
+// withLineDirectives wraps chunk output with source-location directives
+// when the Tangle is configured to emit them.
+func (t *Tangle) withLineDirectives(c *parser.Chunk, content string) string {
+	if !t.LineDirectives {
+		return content
+	}
+	dir := formatLineDirective(c.Language, c.Source, c.Line)
+	if dir == "" {
+		return content
+	}
+	return dir + content
+}
+
 func writeFile(path, content string) error {
 	dir := filepath.Dir(path)
 	if dir != "." && dir != "" {
