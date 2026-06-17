@@ -29,17 +29,6 @@ type lspError struct {
 	Message string `json:"message"`
 }
 
-type initializeParams struct {
-	ProcessID    int `json:"processId"`
-	Capabilities struct {
-		TextDocument struct {
-			Completion     map[string]interface{} `json:"completion,omitempty"`
-			Definition     map[string]interface{} `json:"definition,omitempty"`
-			DocumentSymbol map[string]interface{} `json:"documentSymbol,omitempty"`
-		} `json:"textDocument"`
-	} `json:"capabilities"`
-}
-
 type textDocumentItem struct {
 	URI        string `json:"uri"`
 	LanguageID string `json:"languageId"`
