@@ -27,6 +27,15 @@ type Chunk struct {
 	// Empty means no pipe transformation.
 	PipeCmd string
 
+	// ExecCmd is the exec command from the exec: attribute.
+	// When set, the chunk body is executed through this command and
+	// stdout replaces the body content.
+	ExecCmd string
+
+	// SessionName identifies a persistent process session for exec: chunks.
+	// Multiple chunks with the same session name share the same process.
+	SessionName string
+
 	// Override, if true, means this chunk replaces (rather than appends to)
 	// any previous definition with the same name.
 	Override bool

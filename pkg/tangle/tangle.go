@@ -1,6 +1,6 @@
 // Package tangle implements code extraction from goweb literate programming
-// documents. It resolves <<ref>> references, applies pipe commands, and
-// writes the resulting source files.
+// documents. It resolves <<ref>> references, applies pipe commands, exec
+// commands, session-based execution, and writes the resulting source files.
 package tangle
 
 import (
@@ -12,14 +12,138 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/manic/goweb/pkg/graph"
 	"github.com/manic/goweb/pkg/parser"
 )
 
+// SessionManager manages persistent processes for session-based execution.
+type SessionManager struct {
+	mu       sync.Mutex
+	procs    map[string]*exec.Cmd
+	stdin    map[string]io.WriteCloser
+}
+
+// NewSessionManager creates a new session manager.
+func NewSessionManager() *SessionManager {
+	return &SessionManager{
+		procs: make(map[string]*exec.Cmd),
+		stdin: make(map[string]io.WriteCloser),
+	}
+}
+
+// Exec runs body through the command identified by exeCmd.
+// If session is non-empty, a persistent process is used and state carries over.
+func (sm *SessionManager) Exec(exeCmd, session, body string, pipeDir string) (string, error) {
+	if session == "" {
+		// One-shot execution.
+		return runCommand(exeCmd, body, pipeDir)
+	}
+
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	cmd, exists := sm.procs[session]
+	if !exists {
+		// Start a new persistent process.
+		parts := splitCommand(exeCmd)
+		if len(parts) == 0 {
+			return body, nil
+		}
+		c := exec.Command(parts[0], parts[1:]...)
+		if pipeDir != "" {
+			c.Dir = pipeDir
+		}
+
+		stdin, err := c.StdinPipe()
+		if err != nil {
+			return "", fmt.Errorf("session %q: stdin pipe: %w", session, err)
+		}
+		var stdout bytes.Buffer
+		c.Stdout = &stdout
+		c.Stderr = &stdout
+
+		if err := c.Start(); err != nil {
+			return "", fmt.Errorf("session %q: start: %w", session, err)
+		}
+
+		sm.procs[session] = c
+		sm.stdin[session] = stdin
+
+		// Write body to stdin and close it.
+		io.WriteString(stdin, body)
+		stdin.Close()
+
+		// Wait for the process to finish.
+		if err := c.Wait(); err != nil {
+			return "", fmt.Errorf("session %q: wait: %w\noutput: %s", session, err, stdout.String())
+		}
+
+		return stdout.String(), nil
+	}
+
+	// Reuse existing session process.
+	// Sessions are currently one-shot (start, run, finish).
+	// For true REPL-style sessions, a different protocol is needed.
+	stdin := sm.stdin[session]
+	io.WriteString(stdin, body)
+	stdin.Close()
+
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stdout
+
+	if err := cmd.Wait(); err != nil {
+		return "", fmt.Errorf("session %q: wait: %w\noutput: %s", session, err, stdout.String())
+	}
+
+	delete(sm.procs, session)
+	delete(sm.stdin, session)
+	return stdout.String(), nil
+}
+
+// Close terminates all active sessions.
+func (sm *SessionManager) Close() {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	for name, cmd := range sm.procs {
+		if cmd.Process != nil {
+			cmd.Process.Kill()
+		}
+		delete(sm.procs, name)
+	}
+	sm.stdin = make(map[string]io.WriteCloser)
+}
+
+// runCommand executes a command with body as stdin and returns stdout.
+func runCommand(exeCmd, body, pipeDir string) (string, error) {
+	parts := splitCommand(exeCmd)
+	if len(parts) == 0 {
+		return body, nil
+	}
+
+	cmd := exec.Command(parts[0], parts[1:]...)
+	cmd.Stdin = strings.NewReader(body)
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if pipeDir != "" {
+		cmd.Dir = pipeDir
+	}
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("command %q failed: %w\nstderr: %s", exeCmd, err, stderr.String())
+	}
+
+	return stdout.String(), nil
+}
+
 // Tangle holds configuration for the tangling process.
 type Tangle struct {
-	// PipeDir is the working directory for pipe commands.
+	// PipeDir is the working directory for pipe/exec commands.
 	PipeDir string
 
 	// DryRun, if true, prints what would be written without actually writing.
@@ -28,13 +152,30 @@ type Tangle struct {
 	// Stdout is where chunk output goes when no file: attribute is set
 	// or when a specific chunk is requested.
 	Stdout io.Writer
+
+	// sessions manages persistent processes for session-based execution.
+	sessions *SessionManager
 }
 
 // New creates a new Tangle with default settings.
 func New() *Tangle {
 	return &Tangle{
-		Stdout: os.Stdout,
+		Stdout:   os.Stdout,
+		sessions: NewSessionManager(),
 	}
+}
+
+// execChunk runs the chunk body through the exec command, optionally using a session.
+func (t *Tangle) execChunk(c *parser.Chunk, body string) (string, error) {
+	if c.ExecCmd == "" {
+		return body, nil
+	}
+	return t.sessions.Exec(c.ExecCmd, c.SessionName, body, t.PipeDir)
+}
+
+// Close terminates all active sessions.
+func (t *Tangle) Close() {
+	t.sessions.Close()
 }
 
 // Tangle processes a Document, resolving all references, applying pipes,
@@ -72,8 +213,14 @@ func (t *Tangle) Tangle(doc *parser.Document) error {
 				return fmt.Errorf("resolving chunk %q: %w", c.Name, err)
 			}
 
-			// Apply pipe command if specified.
-			output, err := t.applyPipe(c.Name, resolved, c.PipeCmd)
+			// Apply exec command if specified (runs body through interpreter).
+			executed, err := t.execChunk(c, resolved)
+			if err != nil {
+				return fmt.Errorf("executing chunk %q: %w", c.Name, err)
+			}
+
+			// Apply pipe command if specified (transforms output).
+			output, err := t.applyPipe(c.Name, executed, c.PipeCmd)
 			if err != nil {
 				return fmt.Errorf("piping chunk %q: %w", c.Name, err)
 			}

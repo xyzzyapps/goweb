@@ -38,14 +38,16 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 			if kind == 1 {
 				// End of chunk definition.
 				chunk := &Chunk{
-					Name:     chunkDef.name,
-					Language: chunkDef.language,
-					Body:     strings.Join(chunkDef.body, "\n"),
-					File:     chunkDef.file,
-					PipeCmd:  chunkDef.pipeCmd,
-					Line:     chunkDef.startLine,
-					Source:   sourcePath,
-					Override: chunkDef.override,
+					Name:        chunkDef.name,
+					Language:    chunkDef.language,
+					Body:        strings.Join(chunkDef.body, "\n"),
+					File:        chunkDef.file,
+					PipeCmd:     chunkDef.pipeCmd,
+					ExecCmd:     chunkDef.execCmd,
+					SessionName: chunkDef.sessionName,
+					Line:        chunkDef.startLine,
+					Source:      sourcePath,
+					Override:    chunkDef.override,
 				}
 				chunks = addChunk(chunks, chunk)
 				chunkDef = nil
@@ -115,6 +117,10 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 					chunkDef.file = v
 				case "pipe":
 					chunkDef.pipeCmd = v
+				case "exec":
+					chunkDef.execCmd = v
+				case "session":
+					chunkDef.sessionName = v
 				case "override":
 					chunkDef.override = v == "true"
 				}
@@ -160,13 +166,15 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 
 // chunkDefinition tracks state while parsing a chunk definition outside a fence.
 type chunkDefinition struct {
-	name      string
-	language  string
-	body      []string
-	file      string
-	pipeCmd   string
-	override  bool
-	startLine int
+	name        string
+	language    string
+	body        []string
+	file        string
+	pipeCmd     string
+	execCmd     string
+	sessionName string
+	override    bool
+	startLine   int
 }
 
 // isFenceOpen checks if a line starts a fenced code block.
