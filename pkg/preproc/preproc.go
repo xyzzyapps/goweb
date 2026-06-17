@@ -76,16 +76,31 @@ func processFileWithImports(path string, vars map[string]string, result *Result)
 
 	var outLines []string
 
+	// flushOutLines writes pending outLines to result.Lines and resets.
+	flushOutLines := func() {
+		if len(outLines) > 0 {
+			result.Lines = append(result.Lines, outLines...)
+			outLines = nil
+		}
+	}
+
 	for i, line := range rawLines {
 		trimmed := strings.TrimSpace(line)
 		currentState := stack[len(stack)-1].state
 
-		// Check for import directive.
-		if isImportDirective(trimmed) {
+		// Check for import or override directive.
+		if isImportDirective(trimmed) || isOverrideDirective(trimmed) {
+			isOverride := isOverrideDirective(trimmed)
 			importPath := parseImportPath(trimmed)
 			resolved := importPath
 			if !filepath.IsAbs(resolved) {
 				resolved = filepath.Join(dir, resolved)
+			}
+			// Flush lines accumulated so far before the imported content.
+			flushOutLines()
+			if isOverride {
+				// Inject marker so the parser knows subsequent chunks override.
+				result.Lines = append(result.Lines, "<<__goweb_override__>>")
 			}
 			if err := processFileWithImports(resolved, vars, result); err != nil {
 				return fmt.Errorf("importing %s from %s line %d: %w", importPath, absPath, i+1, err)
@@ -165,8 +180,6 @@ func processFileWithImports(path string, vars map[string]string, result *Result)
 }
 
 // isImportDirective checks if a trimmed line is an <<import "path">> directive.
-// Must be exactly <<import (with a space or quote after) to avoid matching
-// chunk references like <<imports>>.
 func isImportDirective(line string) bool {
 	if !strings.HasPrefix(line, "<<import") {
 		return false
@@ -174,12 +187,23 @@ func isImportDirective(line string) bool {
 	if len(line) < 10 {
 		return false
 	}
-	// After "<<import" there must be a space or quote.
 	ch := line[8]
 	return ch == ' ' || ch == '"'
 }
 
-// parseImportPath extracts the path from <<import "path">>.
+// isOverrideDirective checks if a trimmed line is an <<override "path">> directive.
+func isOverrideDirective(line string) bool {
+	if !strings.HasPrefix(line, "<<override") {
+		return false
+	}
+	if len(line) < 11 {
+		return false
+	}
+	ch := line[10]
+	return ch == ' ' || ch == '"'
+}
+
+// parseImportPath extracts the path from <<import "path">> or <<override "path">>.
 func parseImportPath(line string) string {
 	// Line is like: <<import "path/to/file.md">>
 	start := strings.Index(line, "\"")

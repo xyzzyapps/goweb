@@ -27,6 +27,7 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 	var currentFence *fencedBlock
 	var fenceChar string          // ``` or ~~~
 	var chunkDef *chunkDefinition // non-nil while inside a chunk definition
+	overrideMode := false         // set by <<__goweb_override__>> marker
 
 	for i, line := range lines {
 		lineNum := i + 1 // 1-based
@@ -61,6 +62,9 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 			if currentFence != nil {
 				// Close current fence (handles edge case of unclosed fence).
 				for _, c := range extractChunksFromFence(currentFence, sourcePath) {
+					if overrideMode {
+						c.Override = true
+					}
 					chunks = addChunk(chunks, c)
 				}
 				currentFence = nil
@@ -76,6 +80,9 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 
 		if currentFence != nil && isFenceClose(line, fenceChar) {
 			for _, c := range extractChunksFromFence(currentFence, sourcePath) {
+				if overrideMode {
+					c.Override = true
+				}
 				chunks = addChunk(chunks, c)
 			}
 			currentFence = nil
@@ -85,6 +92,12 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 
 		if currentFence != nil {
 			currentFence.lines = append(currentFence.lines, line)
+			continue
+		}
+
+		// Handle override marker.
+		if strings.TrimSpace(line) == "<<__goweb_override__>>" {
+			overrideMode = true
 			continue
 		}
 
@@ -106,6 +119,10 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 					chunkDef.override = v == "true"
 				}
 			}
+			// If overrideMode is active, this chunk overrides any existing.
+			if overrideMode {
+				chunkDef.override = true
+			}
 			continue
 		}
 	}
@@ -113,6 +130,9 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 	// Handle unclosed fence at EOF.
 	if currentFence != nil {
 		for _, c := range extractChunksFromFence(currentFence, sourcePath) {
+			if overrideMode {
+				c.Override = true
+			}
 			chunks = addChunk(chunks, c)
 		}
 	}
@@ -245,10 +265,11 @@ func parseFenceLanguage(line string) string {
 }
 
 // terminatorKind classifies a line in a chunk body.
-//   0 = not a terminator (keep as body)
-//   1 = bare ">>" (terminate chunk)
-//   2 = escaped "\>>" (literal ">>", continue)
-//   3 = double-escaped "\\>>" (literal "\>>", continue)
+//
+//	0 = not a terminator (keep as body)
+//	1 = bare ">>" (terminate chunk)
+//	2 = escaped "\>>" (literal ">>", continue)
+//	3 = double-escaped "\\>>" (literal "\>>", continue)
 func terminatorKind(line string) (kind int, literal string) {
 	trimmed := strings.TrimSpace(line)
 	if trimmed == "\\\\>>" {
@@ -465,49 +486,49 @@ func FormatChunkHeader(name string, file string, pipeCmd string) string {
 // This map is configurable; users can modify it at init time or via
 // goweb configuration.
 var LanguageExtensions = map[string]string{
-	".go":       "go",
-	".py":       "python",
-	".js":       "javascript",
-	".ts":       "typescript",
-	".rs":       "rust",
-	".c":        "c",
-	".h":        "c",
-	".cpp":      "cpp",
-	".cc":       "cpp",
-	".hpp":      "cpp",
-	".java":     "java",
-	".rb":       "ruby",
-	".sh":       "bash",
-	".bash":     "bash",
-	".zsh":      "bash",
-	".pl":       "perl",
-	".php":      "php",
-	".swift":    "swift",
-	".kt":       "kotlin",
-	".scala":    "scala",
-	".zig":      "zig",
-	".md":       "markdown",
-	".html":     "html",
-	".htm":      "html",
-	".css":      "css",
-	".scss":     "scss",
-	".less":     "less",
-	".json":     "json",
-	".yaml":     "yaml",
-	".yml":      "yaml",
-	".toml":     "toml",
-	".xml":      "xml",
-	".sql":      "sql",
-	".r":        "r",
-	".lua":      "lua",
-	".dart":     "dart",
-	".ex":       "elixir",
-	".exs":      "elixir",
-	".erl":      "erlang",
-	".hs":       "haskell",
-	".nim":      "nim",
-	".vue":      "vue",
-	".svelte":   "svelte",
+	".go":     "go",
+	".py":     "python",
+	".js":     "javascript",
+	".ts":     "typescript",
+	".rs":     "rust",
+	".c":      "c",
+	".h":      "c",
+	".cpp":    "cpp",
+	".cc":     "cpp",
+	".hpp":    "cpp",
+	".java":   "java",
+	".rb":     "ruby",
+	".sh":     "bash",
+	".bash":   "bash",
+	".zsh":    "bash",
+	".pl":     "perl",
+	".php":    "php",
+	".swift":  "swift",
+	".kt":     "kotlin",
+	".scala":  "scala",
+	".zig":    "zig",
+	".md":     "markdown",
+	".html":   "html",
+	".htm":    "html",
+	".css":    "css",
+	".scss":   "scss",
+	".less":   "less",
+	".json":   "json",
+	".yaml":   "yaml",
+	".yml":    "yaml",
+	".toml":   "toml",
+	".xml":    "xml",
+	".sql":    "sql",
+	".r":      "r",
+	".lua":    "lua",
+	".dart":   "dart",
+	".ex":     "elixir",
+	".exs":    "elixir",
+	".erl":    "erlang",
+	".hs":     "haskell",
+	".nim":    "nim",
+	".vue":    "vue",
+	".svelte": "svelte",
 }
 
 // DetectLanguage infers the programming language from a file path by
