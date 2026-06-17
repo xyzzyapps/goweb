@@ -20,9 +20,9 @@ import (
 
 // SessionManager manages persistent processes for session-based execution.
 type SessionManager struct {
-	mu       sync.Mutex
-	procs    map[string]*exec.Cmd
-	stdin    map[string]io.WriteCloser
+	mu    sync.Mutex
+	procs map[string]*exec.Cmd
+	stdin map[string]io.WriteCloser
 }
 
 // NewSessionManager creates a new session manager.
@@ -72,7 +72,7 @@ func (sm *SessionManager) Exec(exeCmd, session, body string, pipeDir string) (st
 		sm.stdin[session] = stdin
 
 		// Write body to stdin and close it.
-		io.WriteString(stdin, body)
+		_, _ = io.WriteString(stdin, body)
 		stdin.Close()
 
 		// Wait for the process to finish.
@@ -84,10 +84,8 @@ func (sm *SessionManager) Exec(exeCmd, session, body string, pipeDir string) (st
 	}
 
 	// Reuse existing session process.
-	// Sessions are currently one-shot (start, run, finish).
-	// For true REPL-style sessions, a different protocol is needed.
 	stdin := sm.stdin[session]
-	io.WriteString(stdin, body)
+	_, _ = io.WriteString(stdin, body)
 	stdin.Close()
 
 	var stdout bytes.Buffer
