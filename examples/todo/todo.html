@@ -1,0 +1,103 @@
+<html><head><meta charset="utf-8"><title>TODO App — Main Entry Point</title></head><body><h1>TODO App — Main Entry Point</h1>
+<h1>Types</h1>
+<p>type Todo struct {
+Id    int
+Title string
+Done  bool
+}</p>
+<p>type Todos []Todo</p>
+<h1>Methods on Todos</h1>
+<p>Notice: <code>types</code> is defined in <code>types.md</code> — cross-file reference.</p>
+<p>method-list
+method-add
+method-done</p>
+<p>func (t Todos) List() {
+for _, todo := range t {
+mark := &quot; &quot;
+if todo.Done {
+mark = &quot;x&quot;
+}
+fmt.Printf(&quot;[%s] %d: %s\n&quot;, mark, todo.Id, todo.Title)
+}
+}</p>
+<p>func (t *Todos) Add(title string) {
+id := len(*t) + 1
+*t = append(*t, Todo{Id: id, Title: title, Done: false})
+}</p>
+<p>func (t *Todos) Done(id int) error {
+for i, todo := range *t {
+if todo.Id == id {
+(*t)[i].Done = true
+return nil
+}
+}
+return fmt.Errorf(&quot;todo %d not found&quot;, id)
+}</p>
+<p>This file imports chunks from <code>types.md</code> and <code>methods.md</code>.
+All chunks across all files are merged into a single namespace,
+so order doesn't matter — chunks can be defined anywhere and
+referenced from anywhere.</p>
+<p>The app supports a debug mode toggled via <code>--var debug=true</code>.</p>
+<p>MIT License</p>
+<p>Copyright (c) 2026 goweb — {{YEAR}}</p>
+<p>license</p>
+<p>package main</p>
+<p>import (
+&quot;fmt&quot;
+&quot;os&quot;
+&quot;strings&quot;</p>
+<p>)</p>
+<p>types
+methods
+main</p>
+<p>func main() {
+todos := Todos{}
+init-todos
+debug-init
+run-loop
+}</p>
+<p>todos = append(todos,
+Todo{Id: 1, Title: &quot;Learn goweb&quot;, Done: false},
+Todo{Id: 2, Title: &quot;Write docs&quot;, Done: false},
+)</p>
+<p>for {
+fmt.Print(&quot;&gt; &quot;)
+var input string
+fmt.Scanln(&amp;input)
+parts := strings.Fields(input)
+if len(parts) == 0 {
+continue
+}
+switch parts[0] {
+case &quot;list&quot;:
+todos.List()
+case &quot;add&quot;:
+handle-add
+case &quot;done&quot;:
+handle-done
+case &quot;exit&quot;:
+handle-exit
+default:
+fmt.Println(&quot;commands: list, add <title>, done <id>, exit&quot;)
+}
+}</p>
+<p>if len(parts) &lt; 2 {
+fmt.Println(&quot;usage: add <title>&quot;)
+continue
+}
+title := strings.Join(parts[1:], &quot; &quot;)
+todos.Add(title)
+debug-add</p>
+<pre><code>os.Exit(0)
+</code></pre>
+<p>if len(parts) &lt; 2 {
+fmt.Println(&quot;usage: done <id>&quot;)
+continue
+}
+var id int
+fmt.Sscanf(parts[1], &quot;%d&quot;, &amp;id)
+if err := todos.Done(id); err != nil {
+fmt.Println(&quot;error:&quot;, err)
+}
+debug-done</p>
+</body></html>

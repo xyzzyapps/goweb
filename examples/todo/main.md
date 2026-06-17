@@ -8,7 +8,17 @@ All chunks across all files are merged into a single namespace,
 so order doesn't matter — chunks can be defined anywhere and
 referenced from anywhere.
 
+The app supports a debug mode toggled via `--var debug=true`.
+
+<<license>>= file: LICENSE tags: meta
+MIT License
+
+Copyright (c) 2026 goweb — {{YEAR}}
+>>
+
 <<package>>= file: main.go
+<<license>>
+
 package main
 
 import (
@@ -39,13 +49,7 @@ func main() {
 }
 >>
 
-<<license>>= file: LICENSE
-MIT License
-
-Copyright (c) 2026 goweb
->>
-
-<<debug-init>>=
+<<debug-init>>= tags: debug
 <<if debug>>
 	log.Printf("initialized %d todos", len(todos))
 <<end>>
@@ -92,7 +96,7 @@ todos.Add(title)
 <<debug-add>>
 >>
 
-<<debug-done>>=
+<<debug-done>>= tags: debug
 <<if debug>>
 	log.Printf("marked todo %d as done", id)
 <<end>>
@@ -105,7 +109,7 @@ todos.Add(title)
 	os.Exit(0)
 >>
 
-<<debug-add>>=
+<<debug-add>>= tags: debug
 <<if debug>>
 	log.Printf("added todo: %s", title)
 <<end>>

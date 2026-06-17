@@ -1,38 +1,39 @@
-# TODO App — goweb Literate Programming Example
+# goweb TODO App Example
 
-This example demonstrates all goweb features:
+This example demonstrates most goweb features in a working TODO application:
 
-| Feature | How |
+| Feature | Demonstrated |
 |---|---|
-| **Noweb-style chunks** | `<<name>>=` ... `>>` |
-| **References** | `<<name>>` inside code expands the chunk |
-| **Out-of-order definitions** | Chunks defined anywhere; goweb resolves all refs |
-| **Cross-file references** | `<<import "file.md">>` loads chunks from other files |
-| **Debug toggling** | `<<if debug>>` / `<<end>>` controlled by `--var debug=true|false` |
-| **File output** | `file: main.go` on a chunk writes to that path |
-| **Pipe transform** | `pipe: gofmt` formats the generated code |
+| `<<chunk>>=` definitions | Every code block |
+| `<<ref>>` references | `<<types>>`, `<<methods>>`, `<<imports>>`, etc. |
+| `<<import "file.md">>` | Loading `types.md` and `methods.md` |
+| `<<if>>`/`<<end>>` conditionals | Debug mode toggling |
+| `--var debug=true\|false` | Controlling debug output |
+| `file: path` attribute | `main.go` and `LICENSE` output files |
+| `tags:` attribute | `tags: debug`, `tags: meta` on chunks |
+| `{{var}}` substitution | `{{YEAR}}` in license |
+| Cross-file references | `<<types>>` from `types.md`, `<<methods>>` from `methods.md` |
 
 ## Usage
 
 ```bash
-# Production build (no debug)
+# Production build (no debug logging)
 goweb tangle --var debug=false main.md
 go build -o todo main.go
 
-# Debug build (extra logging)
-goweb tangle --var debug=true main.md
+# Debug build (with extra logging)
+goweb tangle --var debug=true main.md --var YEAR=2026
 go build -o todo-debug main.go
-```
 
-## File structure
+# Generate cross-reference index
+goweb index main.md
 
-```
-main.md      — entry point, imports other files, main loop
-types.md     — data types
-methods.md   — methods on Todos
-README.md    — this file
-```
+# Generate dependency diagram
+goweb graph main.md | dot -Tpng -o deps.png
 
-`main.md` imports `types.md` and `methods.md` via `<<import>>`.
-Chunks across all files are merged into a single namespace.
-The `file: main.go` on `<<package>>` means tangled output goes to `main.go`.
+# Render to HTML
+goweb render main.md > todo.html
+
+# Only tangle debug chunks
+goweb tangle --match debug main.md
+```
