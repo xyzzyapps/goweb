@@ -36,6 +36,9 @@ type Chunk struct {
 	// Multiple chunks with the same session name share the same process.
 	SessionName string
 
+	// Tags holds user-defined tags for filtering and categorization.
+	Tags []string
+
 	// Override, if true, means this chunk replaces (rather than appends to)
 	// any previous definition with the same name.
 	Override bool
@@ -57,6 +60,7 @@ func (c *Chunk) Merge(other *Chunk) {
 		c.Line = other.Line
 		c.Source = other.Source
 		c.Language = other.Language
+		c.Tags = other.Tags
 		return
 	}
 	if c.Body != "" && other.Body != "" {
@@ -64,10 +68,32 @@ func (c *Chunk) Merge(other *Chunk) {
 	} else if other.Body != "" {
 		c.Body = other.Body
 	}
-	// Keep language from the first definition unless it was empty
 	if c.Language == "" && other.Language != "" {
 		c.Language = other.Language
 	}
+	if len(c.Tags) == 0 && len(other.Tags) > 0 {
+		c.Tags = other.Tags
+	}
+}
+
+// HasTag checks if a chunk has a specific tag.
+func (c *Chunk) HasTag(tag string) bool {
+	for _, t := range c.Tags {
+		if t == tag {
+			return true
+		}
+	}
+	return false
+}
+
+// HasAnyTag checks if a chunk has any of the given tags.
+func (c *Chunk) HasAnyTag(tags []string) bool {
+	for _, tag := range tags {
+		if c.HasTag(tag) {
+			return true
+		}
+	}
+	return false
 }
 
 // Document represents the full result of parsing one or more literate

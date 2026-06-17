@@ -67,9 +67,7 @@ func runGraph(sourcePath string, vars map[string]string, cluster bool) error {
 
 	for _, c := range doc.Chunks {
 		refs := extractRefs(c.Body)
-		for _, ref := range refs {
-			deps[c.Name] = append(deps[c.Name], ref)
-		}
+		deps[c.Name] = append(deps[c.Name], refs...)
 	}
 
 	// Collect chunk names sorted.

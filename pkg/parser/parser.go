@@ -121,6 +121,8 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 					chunkDef.execCmd = v
 				case "session":
 					chunkDef.sessionName = v
+				case "tags":
+					chunkDef.tags = v
 				case "override":
 					chunkDef.override = v == "true"
 				}
@@ -173,6 +175,7 @@ type chunkDefinition struct {
 	pipeCmd     string
 	execCmd     string
 	sessionName string
+	tags        string // comma-separated
 	override    bool
 	startLine   int
 }
