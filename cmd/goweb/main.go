@@ -147,6 +147,8 @@ Examples:
 	registerGraphCmd()
 	registerReverseCmd()
 	registerSyncCmd()
+	registerRenderCmd()
+	registerLspCmd()
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
