@@ -64,7 +64,11 @@ func processFileWithImports(path string, vars map[string]string, result *Result)
 	if err != nil {
 		return fmt.Errorf("reading %s: %w", absPath, err)
 	}
-	rawLines := splitLines(string(data))
+
+	// Strip YAML frontmatter if present.
+	content := stripFrontmatter(string(data), vars)
+
+	rawLines := splitLines(content)
 	dir := filepath.Dir(absPath)
 
 	// State machine for conditionals.
@@ -258,11 +262,58 @@ func splitLines(content string) []string {
 	return lines
 }
 
+// stripFrontmatter detects and removes YAML frontmatter (content between --- markers)
+// from the beginning of a file. It also extracts any "vars:" values into the vars map.
+func stripFrontmatter(content string, vars map[string]string) string {
+	lines := strings.Split(content, "\n")
+	if len(lines) < 2 || strings.TrimSpace(lines[0]) != "---" {
+		return content
+	}
+
+	// Find closing ---
+	endIdx := -1
+	for i := 1; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i]) == "---" {
+			endIdx = i
+			break
+		}
+	}
+	if endIdx == -1 {
+		return content
+	}
+
+	// Parse simple key: value pairs from frontmatter.
+	for i := 1; i < endIdx; i++ {
+		line := strings.TrimSpace(lines[i])
+		if line == "" {
+			continue
+		}
+		colonIdx := strings.Index(line, ":")
+		if colonIdx == -1 {
+			continue
+		}
+		key := strings.TrimSpace(line[:colonIdx])
+		val := strings.TrimSpace(line[colonIdx+1:])
+		// Remove quotes.
+		val = strings.Trim(val, "\"'")
+		if key != "" && val != "" {
+			// If key is "vars", parse sub-keys.
+			if key == "vars" {
+				// Value is the rest of the line, could be inline vars.
+				continue
+			}
+			// Only set if not already set (CLI flags take precedence).
+			if _, exists := vars[key]; !exists {
+				vars[key] = val
+			}
+		}
+	}
+
+	// Return content after frontmatter.
+	return strings.Join(lines[endIdx+1:], "\n")
+}
+
 // evaluateCondition evaluates a simple conditional expression.
-// Supported forms:
-//   - "name"           — true if vars["name"] is set and non-empty
-//   - "name==value"    — true if vars["name"] == value
-//   - "name!=value"    — true if vars["name"] != value
 func evaluateCondition(expr string, vars map[string]string) bool {
 	expr = strings.TrimSpace(expr)
 
