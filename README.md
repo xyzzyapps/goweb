@@ -1,6 +1,6 @@
 # goweb
 
-**goweb** is a literate programming tool that brings noweb-style chunk syntax to GitHub Flavored Markdown. Write documentation and code in a single `.md` file, then **tangle** to extract source files or **weave** to generate clean markdown.
+**goweb** is a literate programming tool that brings noweb-style chunk syntax to GitHub Flavored Markdown. Write documentation and code in a single `.md` file, then **tangle** to extract source files, **weave** to generate clean markdown, or **sync** to apply edits back from the generated code.
 
 ## Features
 
@@ -15,15 +15,21 @@
 - **Session-based execution** — `session:` attribute shares interpreter state across chunks
 - **Pipe commands** — `pipe:` attribute pipes chunk content through external commands (e.g., `gofmt`)
 - **File output** — `file:` attribute on a chunk writes to a specific path
+- **Chunk metadata** — `tags:` attribute for categorization and filtering
 - **`--output-dir`** — base directory for all tangled/weave output files
 - **Source line directives** — `--line-directives` inserts `//line`/`#line` comments pointing to the `.md` source
+- **Bidirectional sync** — `goweb sync` reads `#line` directives to apply source edits back to the `.md`
 - **Watch mode** — `--watch` re-tangles automatically when the source file changes
 - **Language auto-detect** — infers fenced-block language from `file:` extension
 - **Escape `\>>`** — literal `>>` inside chunk bodies
 - **Topological sorting** — chunks are emitted in dependency order
 - **Cycle detection** — circular references are caught and reported
 - **Weave** — strips goweb syntax to produce clean markdown
+- **Cross-reference index** — `goweb index` prints a table of all chunks and their references
+- **Dependency diagrams** — `goweb graph` outputs Graphviz DOT format
+- **Source → literate** — `goweb reverse` converts source files into `.md` chunks
 - **Project scaffolding** — `goweb init` creates a new literate program skeleton
+- **YAML frontmatter** — `--- key: value ---` config at the top of `.md` files
 
 ## Install
 

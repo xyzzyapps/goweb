@@ -146,6 +146,7 @@ Examples:
 	registerIndexCmd()
 	registerGraphCmd()
 	registerReverseCmd()
+	registerSyncCmd()
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
