@@ -7,12 +7,23 @@
 - **Noweb-style chunks** — `<<name>>=` defines a chunk, `>>` ends it
 - **Out-of-order definitions** — chunks can appear in any order; references are resolved after parsing
 - **Cross-file references** — `<<import "file.md">>` loads chunks from other files
+- **Chunk overriding** — `<<name>>= override` replaces previous definitions
+- **Override imports** — `<<override "file.md">>` loads chunks that replace any existing
 - **Conditional blocks** — `<<if var>>` / `<<elif var>>` / `<<else>>` / `<<end>>` controlled by `--var` flags
+- **Inline variables** — `{{var}}` substitution inside chunk bodies
+- **Code execution** — `exec:` attribute runs chunk body through an interpreter, stdout replaces content
+- **Session-based execution** — `session:` attribute shares interpreter state across chunks
+- **Pipe commands** — `pipe:` attribute pipes chunk content through external commands (e.g., `gofmt`)
 - **File output** — `file:` attribute on a chunk writes to a specific path
-- **Pipe commands** — `pipe:` attribute pipes chunk content through an external command (e.g., `gofmt`)
+- **`--output-dir`** — base directory for all tangled/weave output files
+- **Source line directives** — `--line-directives` inserts `//line`/`#line` comments pointing to the `.md` source
+- **Watch mode** — `--watch` re-tangles automatically when the source file changes
+- **Language auto-detect** — infers fenced-block language from `file:` extension
+- **Escape `\>>`** — literal `>>` inside chunk bodies
 - **Topological sorting** — chunks are emitted in dependency order
 - **Cycle detection** — circular references are caught and reported
 - **Weave** — strips goweb syntax to produce clean markdown
+- **Project scaffolding** — `goweb init` creates a new literate program skeleton
 
 ## Install
 
