@@ -141,6 +141,7 @@ Examples:
 
 	rootCmd.AddCommand(tangleCmd, weaveCmd, initCmd)
 	registerIndexCmd()
+	registerGraphCmd()
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
