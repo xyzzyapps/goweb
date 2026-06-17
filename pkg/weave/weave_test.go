@@ -1,5 +1,8 @@
 package weave
 
+// Tests are currently focused on stripControlSyntax.
+// The Weave function signature is tested via integration tests.
+
 import (
 	"strings"
 	"testing"

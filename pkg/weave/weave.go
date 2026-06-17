@@ -6,6 +6,8 @@ package weave
 import (
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/manic/goweb/pkg/preproc"
@@ -14,7 +16,9 @@ import (
 // Weave generates clean markdown from a goweb source file.
 // It first runs the preprocessor to resolve imports and conditionals,
 // then strips remaining goweb control syntax.
-func Weave(sourcePath string, vars map[string]string, w io.Writer) error {
+// If outputDir is non-empty, the result is written to a file in that
+// directory (named after the source) instead of to w.
+func Weave(sourcePath string, vars map[string]string, w io.Writer, outputDir string) error {
 	// Preprocess: resolve imports and conditionals.
 	result, err := preproc.Process(sourcePath, vars)
 	if err != nil {
@@ -23,8 +27,27 @@ func Weave(sourcePath string, vars map[string]string, w io.Writer) error {
 
 	// Strip goweb control syntax from the preprocessed lines.
 	cleaned := stripControlSyntax(result.Lines)
+	output := strings.Join(cleaned, "\n")
 
-	_, err = io.WriteString(w, strings.Join(cleaned, "\n"))
+	if outputDir != "" {
+		// Derive output filename from source path.
+		base := filepath.Base(sourcePath)
+		name := strings.TrimSuffix(base, ".md")
+		if name == base {
+			name += ".weave"
+		}
+		outPath := filepath.Join(outputDir, name+".weave.md")
+		if err := os.MkdirAll(outputDir, 0755); err != nil {
+			return fmt.Errorf("creating output directory: %w", err)
+		}
+		if err := os.WriteFile(outPath, []byte(output), 0644); err != nil {
+			return fmt.Errorf("writing %s: %w", outPath, err)
+		}
+		fmt.Fprintf(os.Stderr, "wrote %s\n", outPath)
+		return nil
+	}
+
+	_, err = io.WriteString(w, output)
 	return err
 }
 
