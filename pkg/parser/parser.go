@@ -33,7 +33,8 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 
 		// If we're inside a chunk definition (outside a fence), handle it.
 		if chunkDef != nil && currentFence == nil {
-			if strings.TrimSpace(line) == ">>" {
+			kind, literal := terminatorKind(line)
+			if kind == 1 {
 				// End of chunk definition.
 				chunk := &Chunk{
 					Name:     chunkDef.name,
@@ -47,6 +48,8 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 				}
 				chunks = addChunk(chunks, chunk)
 				chunkDef = nil
+			} else if kind >= 2 {
+				chunkDef.body = append(chunkDef.body, literal)
 			} else {
 				chunkDef.body = append(chunkDef.body, line)
 			}
@@ -127,6 +130,9 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 		chunk.PipeCmd = chunkDef.pipeCmd
 		chunks = addChunk(chunks, chunk)
 	}
+
+	// Auto-detect language from file: extension for chunks without a language.
+	inferLanguages(chunks)
 
 	doc.Chunks = chunks
 	return doc, nil
@@ -238,6 +244,25 @@ func parseFenceLanguage(line string) string {
 	return strings.TrimSpace(rest[:end])
 }
 
+// terminatorKind classifies a line in a chunk body.
+//   0 = not a terminator (keep as body)
+//   1 = bare ">>" (terminate chunk)
+//   2 = escaped "\>>" (literal ">>", continue)
+//   3 = double-escaped "\\>>" (literal "\>>", continue)
+func terminatorKind(line string) (kind int, literal string) {
+	trimmed := strings.TrimSpace(line)
+	if trimmed == "\\\\>>" {
+		return 3, "\\\\>>"
+	}
+	if trimmed == "\\>>" {
+		return 2, ">>"
+	}
+	if trimmed == ">>" {
+		return 1, ""
+	}
+	return 0, line
+}
+
 // addChunk adds a chunk to the list, merging with any existing chunk
 // that has the same name. If the new chunk has Override=true, it replaces
 // the existing one. Otherwise bodies are concatenated.
@@ -267,14 +292,20 @@ func extractChunksFromFence(fence *fencedBlock, sourcePath string) []*Chunk {
 			bodyStart := baseLine + i + 1
 
 			// Collect body lines until >> on its own line.
+			// (escaped \>> and \\>> produce >> and \>> literal)
 			var bodyLines []string
 			i++
 			for i < len(lines) {
-				if trimmed := strings.TrimSpace(lines[i]); trimmed == ">>" {
+				kind, literal := terminatorKind(lines[i])
+				if kind == 1 {
 					i++
 					break
 				}
-				bodyLines = append(bodyLines, lines[i])
+				if kind >= 2 {
+					bodyLines = append(bodyLines, literal)
+				} else {
+					bodyLines = append(bodyLines, lines[i])
+				}
 				i++
 			}
 
@@ -428,6 +459,87 @@ func FormatChunkHeader(name string, file string, pipeCmd string) string {
 		b.WriteString(pipeCmd)
 	}
 	return b.String()
+}
+
+// LanguageExtensions maps file extensions to language names for auto-detection.
+// This map is configurable; users can modify it at init time or via
+// goweb configuration.
+var LanguageExtensions = map[string]string{
+	".go":       "go",
+	".py":       "python",
+	".js":       "javascript",
+	".ts":       "typescript",
+	".rs":       "rust",
+	".c":        "c",
+	".h":        "c",
+	".cpp":      "cpp",
+	".cc":       "cpp",
+	".hpp":      "cpp",
+	".java":     "java",
+	".rb":       "ruby",
+	".sh":       "bash",
+	".bash":     "bash",
+	".zsh":      "bash",
+	".pl":       "perl",
+	".php":      "php",
+	".swift":    "swift",
+	".kt":       "kotlin",
+	".scala":    "scala",
+	".zig":      "zig",
+	".md":       "markdown",
+	".html":     "html",
+	".htm":      "html",
+	".css":      "css",
+	".scss":     "scss",
+	".less":     "less",
+	".json":     "json",
+	".yaml":     "yaml",
+	".yml":      "yaml",
+	".toml":     "toml",
+	".xml":      "xml",
+	".sql":      "sql",
+	".r":        "r",
+	".lua":      "lua",
+	".dart":     "dart",
+	".ex":       "elixir",
+	".exs":      "elixir",
+	".erl":      "erlang",
+	".hs":       "haskell",
+	".nim":      "nim",
+	".vue":      "vue",
+	".svelte":   "svelte",
+}
+
+// DetectLanguage infers the programming language from a file path by
+// looking up its extension in LanguageExtensions. Returns "text" if
+// no match is found.
+func DetectLanguage(filePath string) string {
+	ext := ""
+	for i := len(filePath) - 1; i >= 0; i-- {
+		if filePath[i] == '.' {
+			ext = filePath[i:]
+			break
+		}
+		if filePath[i] == '\\' || filePath[i] == '/' {
+			break
+		}
+	}
+	if ext != "" {
+		if lang, ok := LanguageExtensions[ext]; ok {
+			return lang
+		}
+	}
+	return "text"
+}
+
+// inferLanguages fills in empty Language fields on all chunks by checking
+// their File attribute for a recognizable extension.
+func inferLanguages(chunks []*Chunk) {
+	for _, c := range chunks {
+		if c.Language == "" && c.File != "" {
+			c.Language = DetectLanguage(c.File)
+		}
+	}
 }
 
 // ValidateDocument checks for common issues in a parsed document:
