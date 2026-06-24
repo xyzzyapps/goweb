@@ -442,8 +442,10 @@ func templateFuncs() template.FuncMap {
 	}
 }
 
-// renderDefaultTheme generates a Sphinx/Read-the-Docs inspired HTML page
-// with a dark sidebar, breadcrumb navigation, and responsive layout.
+// renderDefaultTheme generates an HTML page that closely matches the
+// Read the Docs (Sphinx RTD) theme, using the same CSS class names,
+// HTML structure (wy-grid-for-nav, wy-nav-side, wy-nav-content-wrap, rst-content),
+// typography (Lato + Roboto Slab), and highlight.js for code highlighting.
 func renderDefaultTheme(data PageData) string {
 	const defaultTmpl = `<!DOCTYPE html>
 <html lang="en">
@@ -451,227 +453,303 @@ func renderDefaultTheme(data PageData) string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{.Title}} — goweb</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.0/styles/github.min.css" id="hljs-light">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.0/styles/atom-one-dark.min.css" id="hljs-dark" disabled>
 <style>
-:root {
-  --sidebar-bg: #2c3e50;
-  --sidebar-text: #b3b3b3;
-  --sidebar-active: #ffffff;
-  --sidebar-link: #2980b9;
-  --sidebar-width: 300px;
-  --content-bg: #fcfcfc;
-  --content-text: #404040;
-  --content-link: #2980b9;
-  --code-bg: #f5f5f5;
-  --border: #e1e4e5;
-  --mono-font: "SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --sidebar-bg: #1a1d23;
-    --content-bg: #0d1117;
-    --content-text: #c9d1d9;
-    --content-link: #58a6ff;
-    --code-bg: #161b22;
-    --border: #30363d;
-  }
-}
 * { box-sizing:border-box; margin:0; padding:0; }
-html { scroll-behavior:smooth; }
-body {
-  font-family: system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  color: var(--content-text);
-  background: var(--content-bg);
-  display: flex;
-  min-height: 100vh;
+html { font-size:100%; }
+.wy-body-for-nav { background:#fcfcfc; }
+.wy-nav-side {
+  position:fixed; top:0; bottom:0; left:0;
+  width:300px; z-index:200;
+  background:#2c3e50; overflow-x:hidden; overflow-y:hidden;
+  min-height:100%; color:#f8f8f8;
 }
-.sidebar {
-  width: var(--sidebar-width);
-  background: var(--sidebar-bg);
-  color: var(--sidebar-text);
-  position: fixed;
-  top: 0; left: 0;
-  height: 100vh;
-  overflow-y: auto;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
+.wy-side-scroll { width:320px; position:relative; overflow-x:hidden; overflow-y:auto; height:100%; }
+.wy-side-nav-search {
+  display:block; width:300px; padding:12px 18px;
+  margin-bottom:0; z-index:200;
+  background:#2980b9; text-align:center;
 }
-.sidebar-header { padding:24px 20px 16px; border-bottom:1px solid rgba(255,255,255,0.1); }
-.sidebar-brand { color:#fff; font-size:1.25em; font-weight:700; text-decoration:none; }
-.sidebar-search { margin-top:12px; }
-.sidebar-search input {
-  width:100%; padding:6px 12px;
-  border:1px solid rgba(255,255,255,0.2); border-radius:4px;
-  background:rgba(255,255,255,0.1); color:#fff; font-size:0.875em;
+.wy-side-nav-search input[type=text] {
+  width:100%; border-radius:50px; padding:6px 12px;
+  border:none; font-size:0.875em;
+  font-family:Lato,"Helvetica Neue",Helvetica,Arial,sans-serif;
 }
-.sidebar-search input::placeholder { color:var(--sidebar-text); }
-.sidebar-nav { flex:1; padding:8px 0; overflow-y:auto; }
-.sidebar-nav ul { list-style:none; padding:0; }
-.sidebar-nav li a {
-  display:block; padding:5px 20px; color:var(--sidebar-text);
-  text-decoration:none; font-size:0.9em;
-  border-left:3px solid transparent;
+.wy-side-nav-search .icon-home { color:#fcfcfc; font-size:1.25em; font-weight:700; text-decoration:none; }
+.wy-menu-vertical { padding-bottom:2em; }
+.wy-menu-vertical p.caption {
+  color:#f8f8f8; font-size:0.85em; margin:12px 0 0;
+  padding:0 18px; font-weight:700; text-transform:uppercase;
 }
-.sidebar-nav li a:hover, .sidebar-nav li.current a {
-  color:var(--sidebar-active); background:rgba(255,255,255,0.05);
+.wy-menu-vertical li { list-style:none; }
+.wy-menu-vertical li a {
+  display:block; position:relative; padding:4px 18px;
+  color:#b3b3b3; line-height:1.4em;
+  font-size:0.9em; text-decoration:none;
 }
-.sidebar-nav li.current a { border-left-color:var(--sidebar-link); }
-.sidebar-nav li.toctree-l2 a { padding-left:36px; }
-.sidebar-nav li.toctree-l3 a { padding-left:52px; }
-.sidebar-nav .sidebar-heading {
-  padding:16px 20px 4px; font-size:0.75em;
-  text-transform:uppercase; letter-spacing:0.1em;
-  color:rgba(255,255,255,0.4); font-weight:600;
+.wy-menu-vertical li a:hover {
+  background:rgba(255,255,255,0.05); color:#fcfcfc;
 }
-.sidebar-footer {
-  padding:12px 20px; border-top:1px solid rgba(255,255,255,0.1);
-  font-size:0.85em;
+.wy-menu-vertical li.current a {
+  background:rgba(255,255,255,0.05); color:#fcfcfc;
+  border-left:3px solid #2980b9;
 }
-.sidebar-footer a { color:var(--sidebar-link); text-decoration:none; }
-.sidebar-footer a:hover { text-decoration:underline; }
-.content {
-  margin-left: var(--sidebar-width);
-  flex: 1;
-  max-width: 100%;
-  padding: 0;
+.wy-menu-vertical li.toctree-l1 a { padding-left:18px; }
+.wy-menu-vertical li.toctree-l2 a { padding-left:34px; }
+.wy-menu-vertical li.toctree-l3 a { padding-left:50px; }
+.wy-nav-content-wrap {
+  margin-left:300px; background:#fcfcfc; min-height:100%;
 }
-.content-inner { max-width: 800px; padding: 40px 48px; margin: 0 auto; }
-.breadcrumb {
-  padding: 12px 48px; background: #fff;
-  border-bottom: 1px solid var(--border);
-  font-size: 0.85em; color: #999;
+.wy-nav-content {
+  padding:24px 48px; max-width:800px; margin:0 auto;
 }
-.breadcrumb a { color: var(--sidebar-link); text-decoration:none; }
-.breadcrumb a:hover { text-decoration:underline; }
-.breadcrumb span { color: var(--content-text); }
-h1 { font-size:2em; margin:0 0 0.5em; color:#1a1a1a; font-weight:700; }
-h2 { font-size:1.5em; margin:1.5em 0 0.5em; color:#1a1a1a; font-weight:700; }
-h3 { font-size:1.25em; margin:1.25em 0 0.5em; color:#333; }
-h4 { font-size:1em; margin:1.33em 0; font-weight:600; }
-p { margin:1em 0; line-height:1.7; }
-a { color:var(--content-link); text-decoration:none; }
-a:hover { text-decoration:underline; }
-code {
-  font-family:var(--mono-font); background:var(--code-bg);
-  padding:0.15em 0.4em; border-radius:3px; font-size:0.85em; color:#c7254e;
+.wy-nav-top {
+  display:none; background:#2980b9; color:#fff;
+  padding:10px 16px; line-height:50px;
+  text-align:center; font-size:100%;
 }
-pre {
-  background:var(--code-bg); border:1px solid var(--border);
-  border-radius:3px; padding:12px 16px; overflow-x:auto;
-  margin:1em 0; line-height:1.5;
+.wy-nav-top a { color:#fcfcfc; font-weight:700; }
+.wy-breadcrumbs { padding:8px 0; margin-bottom:16px; }
+.wy-breadcrumbs li {
+  display:inline-block; list-style:none; font-size:0.85em;
+  color:#999;
 }
-pre code { background:none; padding:0; border-radius:0; color:inherit; }
-blockquote {
-  border-left:4px solid #2980b9; background:#eaf2f8;
-  padding:12px 16px; margin:1em 0; border-radius:0 3px 3px 0;
+.wy-breadcrumbs li a { color:#2980b9; text-decoration:none; }
+.wy-breadcrumbs li a:hover { text-decoration:underline; }
+.wy-breadcrumbs li:before {
+  content:"/"; padding:0 6px; color:#ccc;
 }
-blockquote p { margin:0; }
-blockquote.warning { border-left-color:#e74c3c; background:#fdeaea; }
-blockquote.note { border-left-color:#2980b9; background:#eaf2f8; }
-blockquote.tip { border-left-color:#27ae60; background:#e8f8f0; }
-table { border-collapse:collapse; width:100%; margin:1.5em 0; font-size:0.9em; }
-th, td { border:1px solid var(--border); padding:8px 12px; text-align:left; }
-th { background:#f5f5f5; font-weight:600; }
-tr:nth-child(even) td { background:#fafafa; }
-ul, ol { padding-left:2em; margin:1em 0; }
-hr { border:none; border-top:1px solid var(--border); margin:2em 0; }
-img { max-width:100%; height:auto; }
+.wy-breadcrumbs li:first-child:before { content:none; }
+.wy-breadcrumbs li.wy-breadcrumbs-aside { float:right; }
+.wy-breadcrumbs li.wy-breadcrumbs-aside a { color:#999; font-size:0.9em; }
+.wy-breadcrumbs li.wy-breadcrumbs-aside a:hover { color:#2980b9; }
+
+/* --- rst-content --- */
+.rst-content { font-family:Lato,"Helvetica Neue",Helvetica,Arial,sans-serif; font-size:16px; line-height:1.6; color:#404040; }
+.rst-content h1, .rst-content h2, .rst-content h3, .rst-content h4, .rst-content h5, .rst-content h6 {
+  font-family:"Roboto Slab",ff-tisa-web-pro,Georgia,Arial,sans-serif;
+  font-weight:700; color:#1a1a1a; margin-bottom:24px;
+}
+.rst-content h1 { font-size:2.25em; margin-top:0; }
+.rst-content h2 { font-size:1.75em; margin-top:1.5em; }
+.rst-content h3 { font-size:1.25em; margin-top:1.25em; color:#333; }
+.rst-content h4 { font-size:1em; margin-top:1.33em; font-weight:700; }
+.rst-content p { margin:0 0 24px; line-height:1.7; }
+.rst-content a { color:#2980b9; text-decoration:none; }
+.rst-content a:hover { text-decoration:underline; }
+.rst-content code, .rst-content tt {
+  font-family:SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",Courier,monospace;
+  color:#000; padding:2px 5px; font-size:0.85em;
+  background:#f5f5f5;
+}
+.rst-content code.literal, .rst-content tt.literal { color:#e74c3c; white-space:normal; }
+.rst-content a code, .rst-content a tt { color:#2980b9; }
+.rst-content div[class^=highlight] {
+  border:1px solid #e1e4e5; overflow-x:auto; margin:1px 0 24px;
+}
+.rst-content div[class^=highlight] pre {
+  font-family:SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",Courier,monospace;
+  font-size:12px; line-height:1.4;
+  white-space:pre; margin:0; padding:12px; display:block; overflow:auto;
+  background:#fff;
+}
+.rst-content pre.literal-block {
+  border:1px solid #e1e4e5; overflow-x:auto; margin:1px 0 24px;
+  font-family:SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",Courier,monospace;
+  font-size:12px; line-height:1.4;
+  white-space:pre; padding:12px; display:block; overflow:auto;
+  background:#fff;
+}
+.rst-content blockquote {
+  margin-left:24px; line-height:24px; margin-bottom:24px;
+  border-left:4px solid #2980b9;
+  background:#eaf2f8; padding:12px 16px;
+}
+.rst-content blockquote p { margin:0; }
+.rst-content blockquote p + p { margin-top:0.75em; }
+.rst-content blockquote.warning { border-left-color:#e74c3c; background:#fdeaea; }
+.rst-content blockquote.note { border-left-color:#2980b9; background:#eaf2f8; }
+.rst-content blockquote.tip { border-left-color:#27ae60; background:#e8f8f0; }
+.rst-content table {
+  border-collapse:collapse; width:100%; margin:0 0 24px; font-size:0.9em;
+}
+.rst-content th, .rst-content td {
+  border:1px solid #e1e4e5; padding:8px 12px; text-align:left;
+}
+.rst-content th { background:#f5f5f5; font-weight:700; }
+.rst-content tr:nth-child(even) td { background:#fafafa; }
+.rst-content ul, .rst-content ol { padding-left:2em; margin:0 0 24px; }
+.rst-content li { margin-bottom:0.5em; }
+.rst-content hr { border:none; border-top:1px solid #e1e4e5; margin:2em 0; }
+.rst-content img { max-width:100%; height:auto; }
+.rst-content .section { margin-bottom:24px; }
+
+/* --- Chunk table --- */
 .chunk-table {
-  margin:2em 0; border:1px solid var(--border);
+  margin:2em 0 24px; border:1px solid #e1e4e5;
   border-radius:3px; padding:12px 16px; background:#fafafa;
 }
-.chunk-table summary { cursor:pointer; font-weight:600; color:var(--content-link); font-size:0.9em; }
+.chunk-table summary { cursor:pointer; font-weight:700; color:#2980b9; font-size:0.9em; }
 .chunk-table table { margin:0.5em 0 0; font-size:0.8em; }
 .chunk-table th { background:#e8e8e8; }
-.footer {
-  margin-top:3em; padding-top:1.5em; border-top:2px solid var(--border);
-  font-size:0.85em; color:#999; display:flex; justify-content:space-between;
+
+/* --- Footer --- */
+.rst-footer-buttons { margin-top:24px; }
+.btn {
+  display:inline-block; font-weight:400; text-align:center;
+  vertical-align:middle; cursor:pointer; border:none;
+  padding:8px 16px; font-size:0.9em; border-radius:3px;
+  text-decoration:none;
 }
-.footer a { color:var(--sidebar-link); }
-.sidebar-toggle {
-  display:none; position:fixed; top:12px; left:12px; z-index:20;
-  background:var(--sidebar-bg); color:#fff; border:none;
-  border-radius:4px; padding:8px 12px; font-size:1.2em; cursor:pointer;
+.btn-neutral {
+  background:#f3f6f6; color:#404040; border:1px solid #e1e4e5;
 }
+.btn-neutral:hover { background:#e8ebed; text-decoration:none; }
+.btn-neutral.float-right { float:right; }
+
+/* --- Responsive --- */
 @media (max-width: 768px) {
-  .sidebar { transform:translateX(-100%); transition:transform 0.3s ease; }
-  .sidebar.open { transform:translateX(0); }
-  .content { margin-left:0; }
-  .content-inner, .breadcrumb { padding-left:24px; padding-right:24px; }
-  .sidebar-toggle { display:block; }
+  .wy-nav-side { left:-300px; }
+  .wy-nav-side.shift { left:0; }
+  .wy-nav-content-wrap { margin-left:0; }
+  .wy-nav-content-wrap.shift { position:relative; left:300px; }
+  .wy-nav-top { display:block; }
 }
+
+/* --- Dark mode --- */
 @media (prefers-color-scheme: dark) {
-  h1, h2, h3 { color:#e6edf3; }
-  .breadcrumb { background:var(--content-bg); border-bottom-color:var(--border); }
-  blockquote { background:#0d1d3a; }
-  blockquote.warning { background:#2d1b1b; }
-  blockquote.tip { background:#1b2d1b; }
-  th { background:#21262d; }
-  tr:nth-child(even) td { background:#161b22; }
+  .wy-body-for-nav { background:#0d1117; }
+  .wy-nav-content-wrap { background:#0d1117; }
+  .rst-content { color:#c9d1d9; }
+  .rst-content h1, .rst-content h2, .rst-content h3, .rst-content h4 { color:#e6edf3; }
+  .rst-content code, .rst-content tt { background:#161b22; color:#f0c674; }
+  .rst-content div[class^=highlight] pre { background:#161b22; }
+  .rst-content th { background:#21262d; }
+  .rst-content tr:nth-child(even) td { background:#161b22; }
+  .rst-content blockquote { background:#0d1d3a; }
+  .rst-content blockquote.warning { background:#2d1b1b; }
+  .rst-content blockquote.tip { background:#1b2d1b; }
   .chunk-table { background:#161b22; }
   .chunk-table th { background:#21262d; }
-  code { color:#f0c674; }
-  .footer { border-top-color:var(--border); }
+  .btn-neutral { background:#21262d; color:#c9d1d9; border-color:#30363d; }
 }
 </style>
 </head>
-<body>
+<body class="wy-body-for-nav">
 
-<button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+<div class="wy-grid-for-nav">
 
-<nav class="sidebar" id="sidebar">
-  <div class="sidebar-header">
-    <a href="#" class="sidebar-brand">goweb</a>
-    <div class="sidebar-search">
-      <input type="text" placeholder="Search docs..." disabled>
-    </div>
-  </div>
-  <div class="sidebar-nav">
-    <ul>
-      <li class="current"><a href="#">{{.Title}}</a></li>
-    </ul>
-    {{if .Headings}}
-    <div class="sidebar-heading">On this page</div>
-    <ul>
-      {{range .Headings}}
-      <li class="toctree-l{{.Level}}"><a href="#{{.ID}}">{{.Text}}</a></li>
-      {{end}}
-    </ul>
-    {{end}}
-  </div>
-  <div class="sidebar-footer">
-    <a href="{{.Source}}">View source</a>
-  </div>
-</nav>
-
-<div class="content">
-  <nav class="breadcrumb">
-    <a href="#">Home</a> / <span>{{.Title}}</span>
-  </nav>
-  <div class="content-inner">
-    <article>
-      {{.Content}}
-    </article>
-
-    {{if .Chunks}}
-    <details class="chunk-table">
-      <summary>Code chunks ({{len .Chunks}})</summary>
-      <table>
-        <tr><th>Name</th><th>File</th><th>Tags</th><th>Line</th></tr>
-        {{range .Chunks}}
-        <tr><td><code>&lt;&lt;{{.Name}}&gt;&gt;</code></td><td>{{.File}}</td><td>{{join .Tags ", "}}</td><td>{{.Line}}</td></tr>
+  <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href="#" class="icon-home"> goweb</a>
+        <form role="search" class="wy-form" action="#" method="get">
+          <input type="text" name="q" placeholder="Search docs" disabled>
+        </form>
+      </div>
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+        <p class="caption" role="heading"><span class="caption-text">Page</span></p>
+        <ul>
+          <li class="current toctree-l1"><a href="#">{{.Title}}</a></li>
+        </ul>
+        {{if .Headings}}
+        <p class="caption" role="heading"><span class="caption-text">On this page</span></p>
+        <ul>
+          {{range .Headings}}
+          <li class="toctree-l{{.Level}}"><a href="#{{.ID}}">{{.Text}}</a></li>
+          {{end}}
+        </ul>
         {{end}}
-      </table>
-    </details>
-    {{end}}
+        <p class="caption" role="heading"><span class="caption-text">Source</span></p>
+        <ul>
+          <li class="toctree-l1"><a href="{{.Source}}">View source</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
 
-    <footer class="footer">
-      <span>&copy; 2026 goweb</span>
-      <span>Generated by <a href="https://github.com/manic/goweb">goweb</a></span>
-    </footer>
-  </div>
+  <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+    <nav class="wy-nav-top" aria-label="Mobile navigation menu">
+      <i data-toggle="wy-nav-top" onclick="var s=document.querySelector('.wy-nav-side'),c=document.querySelector('.wy-nav-content-wrap');s.classList.toggle('shift');c.classList.toggle('shift')" style="cursor:pointer;position:absolute;left:12px;top:0;line-height:50px;font-size:1.5em;">☰</i>
+      <a href="#">{{.Title}}</a>
+    </nav>
+
+    <div class="wy-nav-content">
+      <div class="rst-content">
+
+        <div role="navigation" aria-label="Page navigation">
+          <ul class="wy-breadcrumbs">
+            <li><a href="#" class="icon-home"> Home</a></li>
+            <li class="breadcrumb-item active">{{.Title}}</li>
+            <li class="wy-breadcrumbs-aside">
+              <a href="{{.Source}}">View source</a>
+            </li>
+          </ul>
+          <hr>
+        </div>
+
+        <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+          <div itemprop="articleBody">
+            <div class="section">
+              <article>
+                {{.Content}}
+              </article>
+            </div>
+          </div>
+        </div>
+
+        {{if .Chunks}}
+        <details class="chunk-table">
+          <summary>Code chunks ({{len .Chunks}})</summary>
+          <table>
+            <tr><th>Name</th><th>File</th><th>Tags</th><th>Line</th></tr>
+            {{range .Chunks}}
+            <tr><td><code>&lt;&lt;{{.Name}}&gt;&gt;</code></td><td>{{.File}}</td><td>{{join .Tags ", "}}</td><td>{{.Line}}</td></tr>
+            {{end}}
+          </table>
+        </details>
+        {{end}}
+
+        <footer>
+          <div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+            <a href="#" class="btn btn-neutral float-right">Next →</a>
+          </div>
+          <hr>
+          <div role="contentinfo">
+            <p>&copy; 2026 goweb. Generated by <a href="https://github.com/manic/goweb">goweb</a>.</p>
+          </div>
+        </footer>
+      </div>
+    </div>
+  </section>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.0/highlight.min.js"></script>
+<script>
+(function() {
+  var light = document.getElementById('hljs-light');
+  var dark = document.getElementById('hljs-dark');
+  function setTheme() {
+    var d = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    light.disabled = d; dark.disabled = !d;
+  }
+  setTheme();
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', setTheme);
+  document.querySelectorAll('.rst-content pre').forEach(function(pre) {
+    if (pre.parentNode.className.indexOf('highlight') === -1) {
+      var div = document.createElement('div');
+      div.className = 'highlight';
+      pre.parentNode.insertBefore(div, pre);
+      div.appendChild(pre);
+    }
+  });
+  hljs.highlightAll();
+})();
+</script>
 </body>
 </html>`
 	tmpl := template.Must(template.New("page").Funcs(template.FuncMap{
