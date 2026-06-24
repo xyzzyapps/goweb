@@ -52,11 +52,15 @@ func Weave(sourcePath string, vars map[string]string, w io.Writer, outputDir str
 }
 
 // stripControlSyntax removes goweb control lines and markers from a list of
-// source lines, leaving clean markdown.
+// source lines, leaving clean markdown. Chunk body code that appears outside
+// existing fenced code blocks is wrapped in fenced code blocks with a language
+// tag derived from the chunk's file: attribute (if present).
 func stripControlSyntax(lines []string) []string {
 	var out []string
 	inFence := false
 	fenceChar := ""
+	inChunkBody := false // chunk def body outside markdown fences
+	chunkFenceChar := "```"
 
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
@@ -67,6 +71,11 @@ func stripControlSyntax(lines []string) []string {
 			if !inFence {
 				inFence = true
 				fenceChar = fc
+				// If we were in an implicit chunk body, close it first.
+				if inChunkBody {
+					out = append(out, chunkFenceChar)
+					inChunkBody = false
+				}
 				// Keep fence opening line but strip any goweb attributes.
 				out = append(out, cleanFenceOpen(line))
 				continue
@@ -79,10 +88,10 @@ func stripControlSyntax(lines []string) []string {
 		}
 
 		if inFence {
-			// Inside a code block.
+			// Inside a markdown fenced code block.
 			// Strip chunk definition headers.
 			if isChunkDefStart(trimmed) {
-				continue // Skip the <<name>>= line.
+				continue
 			}
 			// Strip chunk definition terminators (>> on its own line).
 			if trimmed == ">>" {
@@ -91,9 +100,24 @@ func stripControlSyntax(lines []string) []string {
 			// Remove any remaining <<ref>> references or directives.
 			cleaned := removeAngleBrackets(line)
 			out = append(out, cleaned)
+		} else if inChunkBody {
+			// Inside an implicit chunk body (outside markdown fences).
+			// Strip chunk definition terminators (>> on its own line).
+			if trimmed == ">>" {
+				out = append(out, chunkFenceChar)
+				inChunkBody = false
+				continue
+			}
+			// Strip chunk definition headers that might appear inside.
+			if isChunkDefStart(trimmed) {
+				continue
+			}
+			// Remove any remaining <<ref>> references.
+			cleaned := removeAngleBrackets(line)
+			out = append(out, cleaned)
 		} else {
-			// Outside code blocks.
-			// Skip any stray goweb directives that weren't caught by preprocessor.
+			// Outside any code block.
+			// Skip any stray goweb directives.
 			if isGowebDirective(trimmed) {
 				continue
 			}
@@ -101,8 +125,15 @@ func stripControlSyntax(lines []string) []string {
 			if trimmed == ">>" {
 				continue
 			}
-			// Skip chunk definition starts.
+			// Handle chunk definition start — wrap body in fenced code block.
 			if isChunkDefStart(trimmed) {
+				lang := langFromChunkDef(trimmed)
+				if lang != "" {
+					out = append(out, chunkFenceChar+lang)
+				} else {
+					out = append(out, chunkFenceChar)
+				}
+				inChunkBody = true
 				continue
 			}
 			// Also clean any inline <<...>> that might remain.
@@ -111,7 +142,69 @@ func stripControlSyntax(lines []string) []string {
 		}
 	}
 
+	// Close any unclosed chunk body at EOF.
+	if inChunkBody {
+		out = append(out, chunkFenceChar)
+	}
+
 	return out
+}
+
+// langFromChunkDef extracts a language identifier from a chunk definition line
+// by looking at the file: attribute and deriving the language from the extension.
+func langFromChunkDef(line string) string {
+	// Look for file: attribute.
+	rest := line
+	if idx := strings.Index(rest, ">>="); idx >= 0 {
+		rest = rest[idx+3:]
+	}
+	// Find file: attribute.
+	fileVal := ""
+	if idx := strings.Index(rest, "file:"); idx >= 0 {
+		fileVal = strings.TrimSpace(rest[idx+5:])
+		// Take just the filename before any space, comma, or tab.
+		end := strings.IndexAny(fileVal, " \t,")
+		if end >= 0 {
+			fileVal = fileVal[:end]
+		}
+	}
+	if fileVal == "" {
+		return ""
+	}
+	// Extract extension and map to language.
+	ext := strings.ToLower(filepath.Ext(fileVal))
+	switch ext {
+	case ".go":
+		return "go"
+	case ".ts", ".tsx":
+		return "tsx"
+	case ".js", ".jsx":
+		return "jsx"
+	case ".json":
+		return "json"
+	case ".html", ".htm":
+		return "html"
+	case ".css":
+		return "css"
+	case ".py":
+		return "python"
+	case ".rs":
+		return "rust"
+	case ".sh", ".bash":
+		return "bash"
+	case ".yaml", ".yml":
+		return "yaml"
+	case ".md":
+		return "markdown"
+	case ".toml":
+		return "toml"
+	case ".sql":
+		return "sql"
+	case ".xml":
+		return "xml"
+	default:
+		return ""
+	}
 }
 
 // isFenceLine checks if a line looks like a fenced code block marker.

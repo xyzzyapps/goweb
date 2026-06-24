@@ -3,11 +3,41 @@
 This file defines all build configuration files for the Preact + Bun + Tailwind project.
 Each chunk uses a `file:` attribute to specify the output path during tangling.
 
-The following files are generated:
-- **`package.json`** — Bun project manifest with `preact`, `tailwindcss`, and `typescript` dependencies. Uses `{{APP_NAME}}` and `{{AUTHOR}}` variables.
-- **`tsconfig.json`** — TypeScript configuration with `jsxImportSource` set to `"preact"` for JSX support.
-- **`tailwind.config.js`** — Tailwind CSS configuration with custom `primary` color palette and content paths.
-- **`index.html`** — Minimal HTML shell with Tailwind CDN, app mount point `<div id="app">`, and module script entry.
+## Files generated
+
+- **`package.json`** — Bun project manifest with `preact`, `tailwindcss`, and `typescript` dependencies
+- **`tsconfig.json`** — TypeScript configuration with `jsxImportSource` set to `"preact"` for JSX support
+- **`tailwind.config.js`** — Tailwind CSS configuration with custom `primary` color palette
+- **`index.html`** — Minimal HTML shell with Tailwind CDN, app mount point, and module script entry
+
+## Goweb features shown
+
+**`{{var}}` substitution.** Placeholders like `{{APP_NAME}}` and `{{AUTHOR}}` are replaced
+at tangling/render time via `--var APP_NAME="Todo App" --var AUTHOR="You"`.
+This allows a single template to produce customized output for different projects
+without editing the source.
+
+The `{{var}}` syntax supports:
+- Any key-value pair passed via `--var key=value`
+- Unset variables are left as-is (shown as `{{NAME}}` in output)
+- Variables are expanded in both prose and chunk body code
+
+**The `tags:` attribute at scale.** These config chunks are all tagged `tags: config`.
+When running `goweb graph --filter config`, only the configuration chunks would be shown,
+making it easy to understand the project's non-code dependencies.
+
+**Mixed file types.** This example generates JSON (`package.json`, `tsconfig.json`),
+JavaScript (`tailwind.config.js`), and HTML (`index.html`) — all from a single
+markdown file. Goweb's tangling is format-agnostic: it simply writes chunk bodies
+to the specified `file:` path.
+
+**Language inference for rendering.** During `goweb render`, each chunk's language
+is inferred from its file extension:
+- `.json` → syntax highlighted as JSON
+- `.js`, `.jsx` → syntax highlighted as JavaScript/JSX
+- `.html` → syntax highlighted as HTML
+
+This gives the rendered documentation proper syntax highlighting via highlight.js.
 
 <<package-json>>= file: package.json tags: config
 {

@@ -12,7 +12,10 @@
 <style>
 * { box-sizing:border-box; margin:0; padding:0; }
 html { font-size:100%; }
-.wy-body-for-nav { background:#fcfcfc; }
+.wy-body-for-nav {
+  background:#fcfcfc;
+  font-family:Lato,"Helvetica Neue",Helvetica,Arial,sans-serif;
+}
 .wy-nav-side {
   position:fixed; top:0; bottom:0; left:0;
   width:300px; z-index:200;
@@ -24,11 +27,6 @@ html { font-size:100%; }
   display:block; width:300px; padding:12px 18px;
   margin-bottom:0; z-index:200;
   background:#2980b9; text-align:center;
-}
-.wy-side-nav-search input[type=text] {
-  width:100%; border-radius:50px; padding:6px 12px;
-  border:none; font-size:0.875em;
-  font-family:Lato,"Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 .wy-side-nav-search .icon-home { color:#fcfcfc; font-size:1.25em; font-weight:700; text-decoration:none; }
 .wy-menu-vertical { padding-bottom:2em; }
@@ -198,9 +196,6 @@ html { font-size:100%; }
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
         <a href="#" class="icon-home"> goweb</a>
-        <form role="search" class="wy-form" action="#" method="get">
-          <input type="text" name="q" placeholder="Search docs" disabled>
-        </form>
       </div>
       <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
         <p class="caption" role="heading"><span class="caption-text">Page</span></p>
@@ -215,22 +210,40 @@ html { font-size:100%; }
           
           <li class="toctree-l1"><a href="#app-component">App Component</a></li>
           
+          <li class="toctree-l2"><a href="#chunks-in-this-file">Chunks in this file</a></li>
+          
+          <li class="toctree-l2"><a href="#goweb-features-shown">Goweb features shown</a></li>
+          
           <li class="toctree-l1"><a href="#ui-components">UI Components</a></li>
+          
+          <li class="toctree-l2"><a href="#components">Components</a></li>
+          
+          <li class="toctree-l2"><a href="#goweb-features-shown-1">Goweb features shown</a></li>
           
           <li class="toctree-l1"><a href="#build-configuration">Build Configuration</a></li>
           
+          <li class="toctree-l2"><a href="#files-generated">Files generated</a></li>
+          
+          <li class="toctree-l2"><a href="#goweb-features-shown-2">Goweb features shown</a></li>
+          
+          <li class="toctree-l2"><a href="#goweb-features-demonstrated">Goweb features demonstrated</a></li>
+          
           <li class="toctree-l2"><a href="#usage">Usage</a></li>
           
+          <li class="toctree-l2"><a href="#how-the-chunks-are-organized">How the chunks are organized</a></li>
+          
+          <li class="toctree-l2"><a href="#chunk-overriding">Chunk overriding</a></li>
+          
           <li class="toctree-l2"><a href="#project-structure">Project Structure</a></li>
+          
+          <li class="toctree-l2"><a href="#conditional-compilation-with-if">Conditional compilation with if</a></li>
+          
+          <li class="toctree-l2"><a href="#tags-and-chunk-metadata">Tags and chunk metadata</a></li>
           
           <li class="toctree-l2"><a href="#license">License</a></li>
           
         </ul>
         
-        <p class="caption" role="heading"><span class="caption-text">Source</span></p>
-        <ul>
-          <li class="toctree-l1"><a href="examples/preact-todo/main.md">View source</a></li>
-        </ul>
       </div>
     </div>
   </nav>
@@ -248,9 +261,6 @@ html { font-size:100%; }
           <ul class="wy-breadcrumbs">
             <li><a href="#" class="icon-home"> Home</a></li>
             <li class="breadcrumb-item active">Preact TODO App</li>
-            <li class="wy-breadcrumbs-aside">
-              <a href="examples/preact-todo/main.md">View source</a>
-            </li>
           </ul>
           <hr>
         </div>
@@ -263,381 +273,529 @@ html { font-size:100%; }
 <h1 id="app-component">App Component</h1>
 <p>The App component is the main entry point of the Preact application.
 It manages global state (the todo list and active filter) using Preact's <code>useState</code> hook,
-and orchestrates the three sub-components defined in <code>components.md</code>:
+and orchestrates the three sub-components imported from <code>components.md</code>:
 <code>AddTodo</code>, <code>TodoList</code>, and <code>TodoItem</code>.</p>
-<p>The file exports two chunks:</p>
+<h2 id="chunks-in-this-file">Chunks in this file</h2>
+<p>This file exports these files when tangled:</p>
 <ul>
 <li><code>src/style.css</code> — Tailwind CSS directives for base styling</li>
 <li><code>src/main.tsx</code> — Mounts the <code>&lt;App /&gt;</code> component to the DOM</li>
 <li><code>src/app.tsx</code> — The full App component with state management and filter UI</li>
 </ul>
-<p>Each handler function (add, toggle, delete) is defined as a named chunk
-to demonstrate goweb's out-of-order chunk definitions. The debug logging
-chunks (<code>debug-log-*</code>) are only included when <code>--var debug=true</code>.</p>
-<p>@tailwind base;
+<h2 id="goweb-features-shown">Goweb features shown</h2>
+<p><strong>Chunk order independence.</strong> The handler functions (<code>handleAdd</code>, <code>handleToggle</code>, <code>handleDelete</code>)
+are defined as separate named chunks (<code>app-add-todo</code>, <code>app-toggle-todo</code>, <code>app-delete-todo</code>)
+and referenced by <code>name</code> inside the <code>App</code> component. This means they can be defined
+<strong>after</strong> the render function that uses them — goweb resolves all references during tangling,
+so definition order doesn't matter.</p>
+<p><strong>Conditional compilation.</strong> Debug logging chunks (<code>debug-log-add</code>, <code>debug-log-toggle</code>,
+<code>debug-log-delete</code>) are wrapped in <code>if debug</code> / <code>end</code> directives. When you tangle
+with <code>--var debug=true</code>, these chunks are included. When <code>debug</code> is not set, they are stripped.
+This lets you maintain debug code alongside production code without runtime overhead.</p>
+<p><strong>Cross-file references.</strong> The <code>app.tsx</code> chunk imports from <code>./components/add-todo</code>,
+<code>./components/todo-list</code>, and <code>./components/todo-item</code>. These components are defined
+in <code>components.md</code> and imported via <code>import &quot;components.md&quot;&gt;</code> in <code>main.md</code>.</p>
+<p><strong>Chunk references for stubs.</strong> The <code>app-todo-ul</code> reference is left as a placeholder
+inside the JSX. During tangling, any chunk named <code>app-todo-ul</code> (defined elsewhere)
+will be substituted in its place. This is useful for out-of-order definition.</p>
+<pre><code class="language-css">@tailwind base;
 @tailwind components;
-@tailwind utilities;</p>
-<p>body {
-font-family: system-ui, -apple-system, &quot;Segoe UI&quot;, Roboto, sans-serif;
-}</p>
-<p>import { render } from &quot;preact&quot;;
+@tailwind utilities;
+
+body {
+  font-family: system-ui, -apple-system, &quot;Segoe UI&quot;, Roboto, sans-serif;
+}
+</code></pre>
+<pre><code class="language-tsx">import { render } from &quot;preact&quot;;
 import { App } from &quot;./app&quot;;
-import &quot;./style.css&quot;;</p>
-<p>const root = document.getElementById(&quot;app&quot;);
+import &quot;./style.css&quot;;
+
+const root = document.getElementById(&quot;app&quot;);
 if (root) {
-render(<App />, root);
-}</p>
-<p>import { useState } from &quot;preact/hooks&quot;;
+  render(&lt;App /&gt;, root);
+}
+</code></pre>
+<pre><code class="language-tsx">import { useState } from &quot;preact/hooks&quot;;
 import { AddTodo } from &quot;./components/add-todo&quot;;
 import { TodoList } from &quot;./components/todo-list&quot;;
-import { TodoItem } from &quot;./components/todo-item&quot;;</p>
-<p>interface Todo {
-id: number;
-title: string;
-done: boolean;
-}</p>
-<p>export function App() {
-const [todos, setTodos] = useState&lt;Todo[]&gt;([]);
-const [filter, setFilter] = useState&lt;&quot;all&quot; | &quot;active&quot; | &quot;done&quot;&gt;(&quot;all&quot;);</p>
-<p>app-add-todo
-app-toggle-todo
-app-delete-todo
-app-filter-todos</p>
-<p>return (
-<div class="max-w-lg mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg">
-<h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">
-{{APP_NAME}}
-</h1></p>
-<pre><code>  &lt;AddTodo onAdd={handleAdd} /&gt;
+import { TodoItem } from &quot;./components/todo-item&quot;;
 
-  &lt;div class=&quot;flex gap-2 my-4&quot;&gt;
-    &lt;button
-      onClick={() =&gt; setFilter(&quot;all&quot;)}
-      class={&quot;px-3 py-1 rounded-full text-sm &quot; +
-        (filter === &quot;all&quot;
-          ? &quot;bg-blue-500 text-white&quot;
-          : &quot;bg-gray-200 text-gray-700&quot;)
-      }
-    &gt;
-      All
-    &lt;/button&gt;
-    &lt;button
-      onClick={() =&gt; setFilter(&quot;active&quot;)}
-      class={&quot;px-3 py-1 rounded-full text-sm &quot; +
-        (filter === &quot;active&quot;
-          ? &quot;bg-blue-500 text-white&quot;
-          : &quot;bg-gray-200 text-gray-700&quot;)
-      }
-    &gt;
-      Active
-    &lt;/button&gt;
-    &lt;button
-      onClick={() =&gt; setFilter(&quot;done&quot;)}
-      class={&quot;px-3 py-1 rounded-full text-sm &quot; +
-        (filter === &quot;done&quot;
-          ? &quot;bg-blue-500 text-white&quot;
-          : &quot;bg-gray-200 text-gray-700&quot;)
-      }
-    &gt;
-      Done
-    &lt;/button&gt;
-  &lt;/div&gt;
+interface Todo {
+  id: number;
+  title: string;
+  done: boolean;
+}
 
-  app-todo-ul
+export function App() {
+  const [todos, setTodos] = useState&lt;Todo[]&gt;([]);
+  const [filter, setFilter] = useState&lt;&quot;all&quot; | &quot;active&quot; | &quot;done&quot;&gt;(&quot;all&quot;);
 
-  &lt;div class=&quot;mt-4 text-sm text-gray-500 text-center&quot;&gt;
-    {todos.length} item{todos.length !== 1 ? &quot;s&quot; : &quot;&quot;} total
-  &lt;/div&gt;
-&lt;/div&gt;
+  app-add-todo
+  app-toggle-todo
+  app-delete-todo
+  app-filter-todos
+
+  return (
+    &lt;div class=&quot;max-w-lg mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg&quot;&gt;
+      &lt;h1 class=&quot;text-3xl font-bold text-gray-800 mb-6 text-center&quot;&gt;
+        Todo App
+      &lt;/h1&gt;
+
+      &lt;AddTodo onAdd={handleAdd} /&gt;
+
+      &lt;div class=&quot;flex gap-2 my-4&quot;&gt;
+        &lt;button
+          onClick={() =&gt; setFilter(&quot;all&quot;)}
+          class={&quot;px-3 py-1 rounded-full text-sm &quot; +
+            (filter === &quot;all&quot;
+              ? &quot;bg-blue-500 text-white&quot;
+              : &quot;bg-gray-200 text-gray-700&quot;)
+          }
+        &gt;
+          All
+        &lt;/button&gt;
+        &lt;button
+          onClick={() =&gt; setFilter(&quot;active&quot;)}
+          class={&quot;px-3 py-1 rounded-full text-sm &quot; +
+            (filter === &quot;active&quot;
+              ? &quot;bg-blue-500 text-white&quot;
+              : &quot;bg-gray-200 text-gray-700&quot;)
+          }
+        &gt;
+          Active
+        &lt;/button&gt;
+        &lt;button
+          onClick={() =&gt; setFilter(&quot;done&quot;)}
+          class={&quot;px-3 py-1 rounded-full text-sm &quot; +
+            (filter === &quot;done&quot;
+              ? &quot;bg-blue-500 text-white&quot;
+              : &quot;bg-gray-200 text-gray-700&quot;)
+          }
+        &gt;
+          Done
+        &lt;/button&gt;
+      &lt;/div&gt;
+
+      app-todo-ul
+
+      &lt;div class=&quot;mt-4 text-sm text-gray-500 text-center&quot;&gt;
+        {todos.length} item{todos.length !== 1 ? &quot;s&quot; : &quot;&quot;} total
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}
 </code></pre>
-<p>);
-}</p>
-<p>function handleAdd(title: string) {
-const newTodo: Todo = {
-id: Date.now(),
-title,
-done: false,
-};
-setTodos((prev) =&gt; [...prev, newTodo]);
-debug-log-add
-}</p>
-<p>function handleToggle(id: number) {
-setTodos((prev) =&gt;
-prev.map((t) =&gt; (t.id === id ? { ...t, done: !t.done } : t))
-);
-debug-log-toggle
-}</p>
-<p>function handleDelete(id: number) {
-setTodos((prev) =&gt; prev.filter((t) =&gt; t.id !== id));
-debug-log-delete
-}</p>
-<p>const filtered = todos.filter((t) =&gt; {
-if (filter === &quot;active&quot;) return !t.done;
-if (filter === &quot;done&quot;) return t.done;
-return true;
-});</p>
-<ul class="space-y-2">
-  {filtered.map((todo) => (
-    <li key={todo.id}>
-      <TodoItem
+<pre><code>function handleAdd(title: string) {
+  const newTodo: Todo = {
+    id: Date.now(),
+    title,
+    done: false,
+  };
+  setTodos((prev) =&gt; [...prev, newTodo]);
+  debug-log-add
+}
+</code></pre>
+<pre><code>function handleToggle(id: number) {
+  setTodos((prev) =&gt;
+    prev.map((t) =&gt; (t.id === id ? { ...t, done: !t.done } : t))
+  );
+  debug-log-toggle
+}
+</code></pre>
+<pre><code>function handleDelete(id: number) {
+  setTodos((prev) =&gt; prev.filter((t) =&gt; t.id !== id));
+  debug-log-delete
+}
+</code></pre>
+<pre><code>const filtered = todos.filter((t) =&gt; {
+  if (filter === &quot;active&quot;) return !t.done;
+  if (filter === &quot;done&quot;) return t.done;
+  return true;
+});
+</code></pre>
+<pre><code>&lt;ul class=&quot;space-y-2&quot;&gt;
+  {filtered.map((todo) =&gt; (
+    &lt;li key={todo.id}&gt;
+      &lt;TodoItem
         todo={todo}
         onToggle={handleToggle}
         onDelete={handleDelete}
-      />
-    </li>
+      /&gt;
+    &lt;/li&gt;
   ))}
-  {filtered.length === 0 && (
-    <li class="text-gray-400 text-center py-4">
+  {filtered.length === 0 &amp;&amp; (
+    &lt;li class=&quot;text-gray-400 text-center py-4&quot;&gt;
       No todos yet. Add one above!
-    </li>
+    &lt;/li&gt;
   )}
-</ul>
-<p>console.log(&quot;[debug] added todo:&quot;, title);</p>
-<p>console.log(&quot;[debug] toggled todo:&quot;, id);</p>
-<p>console.log(&quot;[debug] deleted todo:&quot;, id);</p>
+&lt;/ul&gt;
+</code></pre>
+<pre><code>console.log(&quot;[debug] added todo:&quot;, title);
+</code></pre>
+<pre><code>console.log(&quot;[debug] toggled todo:&quot;, id);
+</code></pre>
+<pre><code>console.log(&quot;[debug] deleted todo:&quot;, id);
+</code></pre>
 <h1 id="ui-components">UI Components</h1>
 <p>This file defines three reusable Preact components for the TODO app.
 Each component is a named chunk with a <code>file:</code> attribute that determines
 the output path during tangling.</p>
+<h2 id="components">Components</h2>
 <ul>
-<li><strong>AddTodo</strong> (<code>src/components/add-todo.tsx</code>) — Controlled form with input and submit button. Uses <code>useState</code> for local input state.</li>
-<li><strong>TodoList</strong> (<code>src/components/todo-list.tsx</code>) — Standalone list component that maps over todos. Tagged with <code>override-demo</code> to show how chunks can be replaced.</li>
-<li><strong>TodoItem</strong> (<code>src/components/todo-item.tsx</code>) — Single todo row with checkbox, title, and delete button. Uses Tailwind hover groups for the delete button.</li>
+<li><strong><code>AddTodo</code></strong> (<code>src/components/add-todo.tsx</code>) — Controlled form with input and submit button. Uses <code>useState</code> for local input state. The form prevents default submission and calls the parent's <code>onAdd</code> callback.</li>
+<li><strong><code>TodoList</code></strong> (<code>src/components/todo-list.tsx</code>) — Standalone list component that maps over todos. Accepts <code>todos</code>, <code>onToggle</code>, and <code>onDelete</code> props. Tagged with <code>override-demo</code> to demonstrate goweb's chunk override feature.</li>
+<li><strong><code>TodoItem</code></strong> (<code>src/components/todo-item.tsx</code>) — Single todo row with checkbox, title, and delete button. Uses Tailwind hover groups to show the delete button on hover, with strikethrough styling for completed items.</li>
 </ul>
-<p>All three components are exported as named exports and imported by <code>app.tsx</code>.</p>
-<p>import { useState } from &quot;preact/hooks&quot;;</p>
-<p>interface AddTodoProps {
-onAdd: (title: string) =&gt; void;
-}</p>
-<p>export function AddTodo({ onAdd }: AddTodoProps) {
-const [value, setValue] = useState(&quot;&quot;);</p>
-<p>function handleSubmit(e: Event) {
-e.preventDefault();
-const trimmed = value.trim();
-if (trimmed === &quot;&quot;) return;
-onAdd(trimmed);
-setValue(&quot;&quot;);
-}</p>
-<p>return (
-<form onSubmit={handleSubmit} class="flex gap-2">
-&lt;input
-type=&quot;text&quot;
-value={value}
-onInput={(e) =&gt; setValue((e.target as HTMLInputElement).value)}
-placeholder=&quot;What needs to be done?&quot;
-class=&quot;flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400&quot;
-/&gt;
-<button
-type="submit"
-class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
->
-Add
-</button>
-</form>
-);
-}</p>
-<p>// This component is imported by app.tsx inline via Array.map.
+<h2 id="goweb-features-shown-1">Goweb features shown</h2>
+<p><strong>The <code>file:</code> attribute.</strong> Each chunk definition includes <code>file: src/components/add-todo.tsx</code>,
+which tells goweb where to write the tangled output. The path is relative to the current
+working directory where <code>goweb tangle</code> is invoked.</p>
+<p><strong>Chunk tags.</strong> The <code>TodoList</code> component includes <code>tags: component, override-demo</code>. Tags
+are metadata that can be used for filtering, grouping, and documentation. The <code>goweb graph</code>
+command can show relationships filtered by tag.</p>
+<p><strong>Chunk overriding.</strong> The <code>override-demo</code> tag indicates that this chunk can be replaced
+via goweb's <code>override</code> mechanism. To override, create another chunk with the same
+name and use <code>override</code> before the definition:</p>
+<pre><code>override
+// Custom implementation here
+</code></pre>
+<p>The override takes precedence during tangling, making this a powerful mechanism
+for swapping implementations without modifying original source files.</p>
+<p><strong>Cross-file chunk resolution.</strong> These components are imported by <code>app.tsx</code> (defined in <code>app.md</code>)
+even though they are defined in this file. Goweb resolves all chunks across imported files
+during tangling, so the import order in <code>main.md</code> (<code>import &quot;app.md&quot;</code>, <code>import &quot;components.md&quot;</code>)
+ensures all chunks are available.</p>
+<p><strong>No language tag needed.</strong> The <code>AddTodo</code> and <code>TodoList</code> chunks use TypeScript/TSX syntax
+but don't include a language annotation in their fenced code block. Goweb's render step
+infers the language from the <code>file:</code> extension (<code>.tsx</code> → TypeScript), so the rendered
+HTML documentation gets proper syntax highlighting via highlight.js.</p>
+<pre><code class="language-tsx">import { useState } from &quot;preact/hooks&quot;;
+
+interface AddTodoProps {
+  onAdd: (title: string) =&gt; void;
+}
+
+export function AddTodo({ onAdd }: AddTodoProps) {
+  const [value, setValue] = useState(&quot;&quot;);
+
+  function handleSubmit(e: Event) {
+    e.preventDefault();
+    const trimmed = value.trim();
+    if (trimmed === &quot;&quot;) return;
+    onAdd(trimmed);
+    setValue(&quot;&quot;);
+  }
+
+  return (
+    &lt;form onSubmit={handleSubmit} class=&quot;flex gap-2&quot;&gt;
+      &lt;input
+        type=&quot;text&quot;
+        value={value}
+        onInput={(e) =&gt; setValue((e.target as HTMLInputElement).value)}
+        placeholder=&quot;What needs to be done?&quot;
+        class=&quot;flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400&quot;
+      /&gt;
+      &lt;button
+        type=&quot;submit&quot;
+        class=&quot;px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors&quot;
+      &gt;
+        Add
+      &lt;/button&gt;
+    &lt;/form&gt;
+  );
+}
+</code></pre>
+<pre><code class="language-tsx">// This component is imported by app.tsx inline via Array.map.
 // It exists as a standalone export for potential reuse.
-import type { JSX } from &quot;preact&quot;;</p>
-<p>interface Todo {
-id: number;
-title: string;
-done: boolean;
-}</p>
-<p>interface TodoListProps {
-todos: Todo[];
-onToggle: (id: number) =&gt; void;
-onDelete: (id: number) =&gt; void;
-}</p>
-<p>// In a more complex app this would handle virtualization or grouping.
+import type { JSX } from &quot;preact&quot;;
+
+interface Todo {
+  id: number;
+  title: string;
+  done: boolean;
+}
+
+interface TodoListProps {
+  todos: Todo[];
+  onToggle: (id: number) =&gt; void;
+  onDelete: (id: number) =&gt; void;
+}
+
+// In a more complex app this would handle virtualization or grouping.
 export function TodoList({ todos, onToggle, onDelete }: TodoListProps) {
-return (
-<ul class="space-y-2">
-{todos.map((todo) =&gt; (
-<li key={todo.id}>
-<TodoItem
-todo={todo}
-onToggle={onToggle}
-onDelete={onDelete}
-/>
-</li>
-))}
-</ul>
-);
-}</p>
-<p>import type { JSX } from &quot;preact&quot;;</p>
-<p>interface Todo {
-id: number;
-title: string;
-done: boolean;
-}</p>
-<p>interface TodoItemProps {
-todo: Todo;
-onToggle: (id: number) =&gt; void;
-onDelete: (id: number) =&gt; void;
-}</p>
-<p>export function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
-return (
-<div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
-&lt;input
-type=&quot;checkbox&quot;
-checked={todo.done}
-onClick={() =&gt; onToggle(todo.id)}
-class=&quot;w-5 h-5 text-blue-500 rounded focus:ring-blue-400 cursor-pointer&quot;
-/&gt;
-&lt;span
-class={&quot;flex-1 &quot; + (todo.done ? &quot;line-through text-gray-400&quot; : &quot;text-gray-800&quot;)}
-&gt;
-{todo.title}
-</span>
-&lt;button
-onClick={() =&gt; onDelete(todo.id)}
-class=&quot;opacity-0 group-hover:opacity-100 px-2 py-1 text-sm text-red-500 hover:bg-red-100 rounded transition-all&quot;
-aria-label=&quot;Delete&quot;
-&gt;
-✕
-</button>
-</div>
-);
-}</p>
+  return (
+    &lt;ul class=&quot;space-y-2&quot;&gt;
+      {todos.map((todo) =&gt; (
+        &lt;li key={todo.id}&gt;
+          &lt;TodoItem
+            todo={todo}
+            onToggle={onToggle}
+            onDelete={onDelete}
+          /&gt;
+        &lt;/li&gt;
+      ))}
+    &lt;/ul&gt;
+  );
+}
+</code></pre>
+<pre><code class="language-tsx">import type { JSX } from &quot;preact&quot;;
+
+interface Todo {
+  id: number;
+  title: string;
+  done: boolean;
+}
+
+interface TodoItemProps {
+  todo: Todo;
+  onToggle: (id: number) =&gt; void;
+  onDelete: (id: number) =&gt; void;
+}
+
+export function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
+  return (
+    &lt;div class=&quot;flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group&quot;&gt;
+      &lt;input
+        type=&quot;checkbox&quot;
+        checked={todo.done}
+        onClick={() =&gt; onToggle(todo.id)}
+        class=&quot;w-5 h-5 text-blue-500 rounded focus:ring-blue-400 cursor-pointer&quot;
+      /&gt;
+      &lt;span
+        class={&quot;flex-1 &quot; + (todo.done ? &quot;line-through text-gray-400&quot; : &quot;text-gray-800&quot;)}
+      &gt;
+        {todo.title}
+      &lt;/span&gt;
+      &lt;button
+        onClick={() =&gt; onDelete(todo.id)}
+        class=&quot;opacity-0 group-hover:opacity-100 px-2 py-1 text-sm text-red-500 hover:bg-red-100 rounded transition-all&quot;
+        aria-label=&quot;Delete&quot;
+      &gt;
+        ✕
+      &lt;/button&gt;
+    &lt;/div&gt;
+  );
+}
+</code></pre>
 <h1 id="build-configuration">Build Configuration</h1>
 <p>This file defines all build configuration files for the Preact + Bun + Tailwind project.
 Each chunk uses a <code>file:</code> attribute to specify the output path during tangling.</p>
-<p>The following files are generated:</p>
+<h2 id="files-generated">Files generated</h2>
 <ul>
-<li><strong><code>package.json</code></strong> — Bun project manifest with <code>preact</code>, <code>tailwindcss</code>, and <code>typescript</code> dependencies. Uses <code>{{APP_NAME}}</code> and <code>{{AUTHOR}}</code> variables.</li>
-<li><strong><code>tsconfig.json</code></strong> — TypeScript configuration with <code>jsxImportSource</code> set to <code>&quot;preact&quot;</code> for JSX support.</li>
-<li><strong><code>tailwind.config.js</code></strong> — Tailwind CSS configuration with custom <code>primary</code> color palette and content paths.</li>
-<li><strong><code>index.html</code></strong> — Minimal HTML shell with Tailwind CDN, app mount point <code>&lt;div id=&quot;app&quot;&gt;</code>, and module script entry.</li>
+<li><strong><code>package.json</code></strong> — Bun project manifest with <code>preact</code>, <code>tailwindcss</code>, and <code>typescript</code> dependencies</li>
+<li><strong><code>tsconfig.json</code></strong> — TypeScript configuration with <code>jsxImportSource</code> set to <code>&quot;preact&quot;</code> for JSX support</li>
+<li><strong><code>tailwind.config.js</code></strong> — Tailwind CSS configuration with custom <code>primary</code> color palette</li>
+<li><strong><code>index.html</code></strong> — Minimal HTML shell with Tailwind CDN, app mount point, and module script entry</li>
 </ul>
-<p>{
-&quot;name&quot;: &quot;{{APP_NAME}}&quot;,
-&quot;version&quot;: &quot;1.0.0&quot;,
-&quot;author&quot;: &quot;{{AUTHOR}}&quot;,
-&quot;scripts&quot;: {
-&quot;dev&quot;: &quot;bun run --hot src/main.tsx&quot;,
-&quot;build&quot;: &quot;bun build src/main.tsx --outdir dist&quot;,
-&quot;preview&quot;: &quot;bun run dist/index.html&quot;
-},
-&quot;dependencies&quot;: {
-&quot;preact&quot;: &quot;^10.26.0&quot;
-},
-&quot;devDependencies&quot;: {
-&quot;tailwindcss&quot;: &quot;^3.4.0&quot;,
-&quot;typescript&quot;: &quot;^5.6.0&quot;,
-&quot;@types/node&quot;: &quot;^22.0.0&quot;
+<h2 id="goweb-features-shown-2">Goweb features shown</h2>
+<p><strong><code>{{var}}</code> substitution.</strong> Placeholders like <code>Todo App</code> and <code>You</code> are replaced
+at tangling/render time via <code>--var APP_NAME=&quot;Todo App&quot; --var AUTHOR=&quot;You&quot;</code>.
+This allows a single template to produce customized output for different projects
+without editing the source.</p>
+<p>The <code>{{var}}</code> syntax supports:</p>
+<ul>
+<li>Any key-value pair passed via <code>--var key=value</code></li>
+<li>Unset variables are left as-is (shown as <code>{{NAME}}</code> in output)</li>
+<li>Variables are expanded in both prose and chunk body code</li>
+</ul>
+<p><strong>The <code>tags:</code> attribute at scale.</strong> These config chunks are all tagged <code>tags: config</code>.
+When running <code>goweb graph --filter config</code>, only the configuration chunks would be shown,
+making it easy to understand the project's non-code dependencies.</p>
+<p><strong>Mixed file types.</strong> This example generates JSON (<code>package.json</code>, <code>tsconfig.json</code>),
+JavaScript (<code>tailwind.config.js</code>), and HTML (<code>index.html</code>) — all from a single
+markdown file. Goweb's tangling is format-agnostic: it simply writes chunk bodies
+to the specified <code>file:</code> path.</p>
+<p><strong>Language inference for rendering.</strong> During <code>goweb render</code>, each chunk's language
+is inferred from its file extension:</p>
+<ul>
+<li><code>.json</code> → syntax highlighted as JSON</li>
+<li><code>.js</code>, <code>.jsx</code> → syntax highlighted as JavaScript/JSX</li>
+<li><code>.html</code> → syntax highlighted as HTML</li>
+</ul>
+<p>This gives the rendered documentation proper syntax highlighting via highlight.js.</p>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;Todo App&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;author&quot;: &quot;You&quot;,
+  &quot;scripts&quot;: {
+    &quot;dev&quot;: &quot;bun run --hot src/main.tsx&quot;,
+    &quot;build&quot;: &quot;bun build src/main.tsx --outdir dist&quot;,
+    &quot;preview&quot;: &quot;bun run dist/index.html&quot;
+  },
+  &quot;dependencies&quot;: {
+    &quot;preact&quot;: &quot;^10.26.0&quot;
+  },
+  &quot;devDependencies&quot;: {
+    &quot;tailwindcss&quot;: &quot;^3.4.0&quot;,
+    &quot;typescript&quot;: &quot;^5.6.0&quot;,
+    &quot;@types/node&quot;: &quot;^22.0.0&quot;
+  }
 }
-}</p>
-<p>{
-&quot;compilerOptions&quot;: {
-&quot;target&quot;: &quot;ES2022&quot;,
-&quot;module&quot;: &quot;ESNext&quot;,
-&quot;moduleResolution&quot;: &quot;bundler&quot;,
-&quot;jsx&quot;: &quot;react-jsx&quot;,
-&quot;jsxImportSource&quot;: &quot;preact&quot;,
-&quot;strict&quot;: true,
-&quot;esModuleInterop&quot;: true,
-&quot;skipLibCheck&quot;: true,
-&quot;forceConsistentCasingInFileNames&quot;: true,
-&quot;outDir&quot;: &quot;dist&quot;,
-&quot;rootDir&quot;: &quot;src&quot;,
-&quot;declaration&quot;: true
-},
-&quot;include&quot;: [&quot;src/**/*&quot;],
-&quot;exclude&quot;: [&quot;node_modules&quot;, &quot;dist&quot;]
-}</p>
-<p>/** @type {import('tailwindcss').Config} <em>/
+</code></pre>
+<pre><code class="language-json">{
+  &quot;compilerOptions&quot;: {
+    &quot;target&quot;: &quot;ES2022&quot;,
+    &quot;module&quot;: &quot;ESNext&quot;,
+    &quot;moduleResolution&quot;: &quot;bundler&quot;,
+    &quot;jsx&quot;: &quot;react-jsx&quot;,
+    &quot;jsxImportSource&quot;: &quot;preact&quot;,
+    &quot;strict&quot;: true,
+    &quot;esModuleInterop&quot;: true,
+    &quot;skipLibCheck&quot;: true,
+    &quot;forceConsistentCasingInFileNames&quot;: true,
+    &quot;outDir&quot;: &quot;dist&quot;,
+    &quot;rootDir&quot;: &quot;src&quot;,
+    &quot;declaration&quot;: true
+  },
+  &quot;include&quot;: [&quot;src/**/*&quot;],
+  &quot;exclude&quot;: [&quot;node_modules&quot;, &quot;dist&quot;]
+}
+</code></pre>
+<pre><code class="language-jsx">/** @type {import('tailwindcss').Config} */
 module.exports = {
-content: [&quot;./src/**/</em>.{tsx,ts}&quot;, &quot;./index.html&quot;],
-theme: {
-extend: {
-colors: {
-primary: {
-50: &quot;#eff6ff&quot;,
-100: &quot;#dbeafe&quot;,
-200: &quot;#bfdbfe&quot;,
-300: &quot;#93c5fd&quot;,
-400: &quot;#60a5fa&quot;,
-500: &quot;#3b82f6&quot;,
-600: &quot;#2563eb&quot;,
-700: &quot;#1d4ed8&quot;,
-800: &quot;#1e40af&quot;,
-900: &quot;#1e3a8a&quot;,
-},
-},
-},
-},
-plugins: [],
-};</p>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{APP_NAME}}</title>
-  <link rel="stylesheet" href="src/style.css">
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 min-h-screen">
-  <div id="app"></div>
-  <script type="module" src="src/main.tsx"></script>
-</body>
-</html>
-<p>This example demonstrates a TODO application built with <strong>Preact</strong>, <strong>Bun</strong>, and <strong>Tailwind CSS</strong>,
-structured as a literate program using goweb's chunk syntax.</p>
-<p>Each component is defined as a named chunk with a <code>file:</code> attribute for tangling.</p>
+  content: [&quot;./src/**/*.{tsx,ts}&quot;, &quot;./index.html&quot;],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: &quot;#eff6ff&quot;,
+          100: &quot;#dbeafe&quot;,
+          200: &quot;#bfdbfe&quot;,
+          300: &quot;#93c5fd&quot;,
+          400: &quot;#60a5fa&quot;,
+          500: &quot;#3b82f6&quot;,
+          600: &quot;#2563eb&quot;,
+          700: &quot;#1d4ed8&quot;,
+          800: &quot;#1e40af&quot;,
+          900: &quot;#1e3a8a&quot;,
+        },
+      },
+    },
+  },
+  plugins: [],
+};
+</code></pre>
+<pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;title&gt;Todo App&lt;/title&gt;
+  &lt;link rel=&quot;stylesheet&quot; href=&quot;src/style.css&quot;&gt;
+  &lt;script src=&quot;https://cdn.tailwindcss.com&quot;&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body class=&quot;bg-gray-50 min-h-screen&quot;&gt;
+  &lt;div id=&quot;app&quot;&gt;&lt;/div&gt;
+  &lt;script type=&quot;module&quot; src=&quot;src/main.tsx&quot;&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p>This literate program demonstrates a <strong>Preact + Bun + Tailwind</strong> TODO application
+while showcasing nearly all of goweb's features. Every source file, config file,
+and build script is defined as a named chunk inside this markdown document.</p>
+<h2 id="goweb-features-demonstrated">Goweb features demonstrated</h2>
 <table>
 <thead>
 <tr>
 <th>Feature</th>
-<th>How Demonstrated</th>
+<th>Usage in this example</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>`` definitions + <code>file:</code></td>
-<td>Each component tangled to <code>src/*.tsx</code></td>
+<td>`` definitions</td>
+<td>Every source file is a named chunk with a <code>file:</code> attribute</td>
 </tr>
 <tr>
 <td><code>import &quot;file.md&quot;</code></td>
-<td>Cross-file refs between all <code>.md</code> files</td>
+<td>Cross-file references between all <code>.md</code> files</td>
 </tr>
 <tr>
-<td><code>if debug</code>/<code>end</code></td>
-<td>Conditional console.log for state changes</td>
+<td><code>ref</code> references</td>
+<td>Handler stubs defined as named refs, resolved during tangle</td>
+</tr>
+<tr>
+<td><code>if</code>/<code>else</code>/<code>end</code></td>
+<td>Conditional debug logging via <code>--var debug=true|false</code></td>
 </tr>
 <tr>
 <td><code>tags:</code> attribute</td>
-<td>Chunks tagged <code>component</code>, <code>config</code>, <code>debug</code></td>
+<td>Chunks tagged <code>component</code>, <code>config</code>, <code>debug</code>, <code>meta</code></td>
 </tr>
 <tr>
-<td><code>--var app-name</code></td>
-<td>Project name in <code>package.json</code></td>
+<td><code>file:</code> attribute</td>
+<td>Each chunk maps directly to a source or config file</td>
 </tr>
 <tr>
-<td><code>--var debug=true|false</code></td>
-<td>Toggle debug logging</td>
+<td><code>--var</code> variables</td>
+<td><code>APP_NAME</code>, <code>AUTHOR</code>, <code>debug</code> injected at tangle/render time</td>
 </tr>
 <tr>
 <td><code>{{var}}</code> substitution</td>
-<td><code>{{APP_NAME}}</code>, <code>{{AUTHOR}}</code> in config</td>
+<td><code>Todo App</code>, <code>You</code> placeholders in JSON, HTML, LICENSE</td>
 </tr>
 <tr>
-<td><code>override</code></td>
-<td>Replace components easily</td>
+<td>Language inference</td>
+<td><code>.tsx</code> → TypeScript, <code>.css</code> → CSS, <code>.json</code> → JSON in rendered output</td>
+</tr>
+<tr>
+<td><code>goweb tangle</code></td>
+<td>Extract all chunks into runnable source files</td>
+</tr>
+<tr>
+<td><code>goweb render</code></td>
+<td>Generate full HTML documentation with RTD theme</td>
+</tr>
+<tr>
+<td><code>goweb weave</code></td>
+<td>Produce clean markdown with fenced code blocks</td>
+</tr>
+<tr>
+<td>Chunk order independence</td>
+<td>Handler functions defined after their usage in the render tree</td>
+</tr>
+<tr>
+<td>Cross-file chunk references</td>
+<td>Components imported from <code>components.md</code>, config from <code>config.md</code></td>
 </tr>
 </tbody>
 </table>
 <h2 id="usage">Usage</h2>
-<pre><code class="language-bash"># Tangle all source files
+<pre><code class="language-bash"># Tangle all source files into the examples/preact-todo/ directory
 goweb tangle --var APP_NAME=&quot;Todo App&quot; --var AUTHOR=&quot;You&quot; main.md
 
-# With debug logging
+# With debug logging (adds console.log statements)
 goweb tangle --var debug=true main.md
 
-# Run with bun
+# Install dependencies and run
 bun install
 bun run dev
+
+# Generate HTML documentation with Read the Docs theme
+goweb render main.md --var debug=true --var APP_NAME=&quot;Todo App&quot; --var AUTHOR=&quot;You&quot; &gt; todo.html
+</code></pre>
+<h2 id="how-the-chunks-are-organized">How the chunks are organized</h2>
+<p>The example is split across four files:</p>
+<ul>
+<li><strong><code>main.md</code></strong> (this file) — entry point with imports, overview, tangle/usage instructions, and the LICENSE chunk</li>
+<li><strong><code>app.md</code></strong> — the main <code>App</code> component with state management, filter buttons, and conditional debug logging</li>
+<li><strong><code>components.md</code></strong> — three presentational components (<code>AddTodo</code>, <code>TodoList</code>, <code>TodoItem</code>) with Tailwind styling</li>
+<li><strong><code>config.md</code></strong> — build configuration files (<code>package.json</code>, <code>tsconfig.json</code>, <code>tailwind.config.js</code>, <code>index.html</code>)</li>
+</ul>
+<p>Each file exports named chunks that are resolved during tangling. The <code>import &quot;file.md&quot;&gt;</code> directive merges the imported file's chunks into the namespace, so chunks defined in <code>components.md</code> can be referenced from <code>app.md</code>.</p>
+<h2 id="chunk-overriding">Chunk overriding</h2>
+<p>The <code>TodoList</code> component chunk is tagged with <code>override-demo</code>. If you define a chunk with the same name
+in another file and mark it with <code>override</code>, goweb will replace the original definition.
+This is useful for swapping implementations without modifying the original source:</p>
+<pre><code class="language-bash"># Create an override chunk
+echo ' file: src/components/todo-list.tsx
+export function TodoList({ todos }) {
+  return &lt;div&gt;Custom implementation&lt;/div&gt;;
+}
+&gt;&gt;' &gt; override.md
+
+# Tangle with override
+goweb tangle --var APP_NAME=&quot;Todo App&quot; main.md override.md
 </code></pre>
 <h2 id="project-structure">Project Structure</h2>
 <pre><code>examples/preact-todo/
@@ -646,36 +804,55 @@ bun run dev
 ├── components.md       # UI sub-components
 ├── config.md           # Build config files
 ├── package.json        # Tangled output — Bun project
-├── tsconfig.json       # TypeScript config
-├── tailwind.config.js  # Tailwind CSS config
+├── tsconfig.json       # TypeScript configuration
+├── tailwind.config.js  # Tailwind CSS theme
 ├── index.html          # HTML entry point
 └── src/
     ├── main.tsx        # Preact mount point
     ├── app.tsx         # App component
-    ├── style.css       # Tailwind imports
+    ├── style.css       # Tailwind directives
     └── components/
         ├── add-todo.tsx
         ├── todo-list.tsx
         └── todo-item.tsx
 </code></pre>
+<h2 id="conditional-compilation-with-if">Conditional compilation with if</h2>
+<p>The <code>app.md</code> file uses <code>if debug</code> / <code>end</code> directives to conditionally include
+<code>console.log</code> statements. When <code>--var debug=true</code> is passed, the debug chunks are included;
+otherwise they are stripped. This allows a single source to produce both production
+and development builds.</p>
+<h2 id="tags-and-chunk-metadata">Tags and chunk metadata</h2>
+<p>Chunks can be tagged with <code>tags:</code> for organization and filtering:</p>
+<ul>
+<li><strong><code>component</code></strong> — UI components tangled to <code>src/components/</code></li>
+<li><strong><code>config</code></strong> — build configuration files</li>
+<li><strong><code>debug</code></strong> — conditional debug logging chunks</li>
+<li><strong><code>meta</code></strong> — metadata files like <code>LICENSE</code></li>
+</ul>
+<p>The <code>goweb graph</code> command can display relationships between tagged chunks.</p>
 <h2 id="license">License</h2>
-<p>MIT License</p>
-<p>Copyright (c) 2026 {{APP_NAME}}</p>
-<p>Permission is hereby granted, free of charge, to any person obtaining a copy
+<pre><code>MIT License
+
+Copyright (c) 2026 Todo App
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the &quot;Software&quot;), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:</p>
-<p>The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.</p>
-<p>THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.</p>
+SOFTWARE.
+</code></pre>
 
               </article>
             </div>
@@ -688,43 +865,43 @@ SOFTWARE.</p>
           <table>
             <tr><th>Name</th><th>File</th><th>Tags</th><th>Line</th></tr>
             
-            <tr><td><code>&lt;&lt;style-css&gt;&gt;</code></td><td>src/style.css</td><td>component</td><td>19</td></tr>
+            <tr><td><code>&lt;&lt;style-css&gt;&gt;</code></td><td>src/style.css</td><td>component</td><td>39</td></tr>
             
-            <tr><td><code>&lt;&lt;main-entry&gt;&gt;</code></td><td>src/main.tsx</td><td>component</td><td>29</td></tr>
+            <tr><td><code>&lt;&lt;main-tsx&gt;&gt;</code></td><td>src/main.tsx</td><td>component</td><td>49</td></tr>
             
-            <tr><td><code>&lt;&lt;app-component&gt;&gt;</code></td><td>src/app.tsx</td><td>component</td><td>40</td></tr>
+            <tr><td><code>&lt;&lt;app-tsx&gt;&gt;</code></td><td>src/app.tsx</td><td>component</td><td>60</td></tr>
             
-            <tr><td><code>&lt;&lt;app-add-todo&gt;&gt;</code></td><td></td><td></td><td>112</td></tr>
+            <tr><td><code>&lt;&lt;app-add-todo&gt;&gt;</code></td><td></td><td></td><td>132</td></tr>
             
-            <tr><td><code>&lt;&lt;app-toggle-todo&gt;&gt;</code></td><td></td><td></td><td>124</td></tr>
+            <tr><td><code>&lt;&lt;app-toggle-todo&gt;&gt;</code></td><td></td><td></td><td>144</td></tr>
             
-            <tr><td><code>&lt;&lt;app-delete-todo&gt;&gt;</code></td><td></td><td></td><td>133</td></tr>
+            <tr><td><code>&lt;&lt;app-delete-todo&gt;&gt;</code></td><td></td><td></td><td>153</td></tr>
             
-            <tr><td><code>&lt;&lt;app-filter-todos&gt;&gt;</code></td><td></td><td></td><td>140</td></tr>
+            <tr><td><code>&lt;&lt;app-filter-todos&gt;&gt;</code></td><td></td><td></td><td>160</td></tr>
             
-            <tr><td><code>&lt;&lt;app-todo-ul&gt;&gt;</code></td><td></td><td></td><td>148</td></tr>
+            <tr><td><code>&lt;&lt;app-todo-ul&gt;&gt;</code></td><td></td><td></td><td>168</td></tr>
             
-            <tr><td><code>&lt;&lt;debug-log-add&gt;&gt;</code></td><td></td><td>debug</td><td>167</td></tr>
+            <tr><td><code>&lt;&lt;debug-log-add&gt;&gt;</code></td><td></td><td></td><td>187</td></tr>
             
-            <tr><td><code>&lt;&lt;debug-log-toggle&gt;&gt;</code></td><td></td><td>debug</td><td>171</td></tr>
+            <tr><td><code>&lt;&lt;debug-log-toggle&gt;&gt;</code></td><td></td><td></td><td>191</td></tr>
             
-            <tr><td><code>&lt;&lt;debug-log-delete&gt;&gt;</code></td><td></td><td>debug</td><td>175</td></tr>
+            <tr><td><code>&lt;&lt;debug-log-delete&gt;&gt;</code></td><td></td><td></td><td>195</td></tr>
             
-            <tr><td><code>&lt;&lt;add-todo-component&gt;&gt;</code></td><td>src/components/add-todo.tsx</td><td>component</td><td>190</td></tr>
+            <tr><td><code>&lt;&lt;todo-list-component&gt;&gt;</code></td><td>src/components/todo-list.tsx</td><td>component, override-demo</td><td>226</td></tr>
             
-            <tr><td><code>&lt;&lt;todo-list-component&gt;&gt;</code></td><td>src/components/todo-list.tsx</td><td>component, override-demo</td><td>228</td></tr>
+            <tr><td><code>&lt;&lt;add-todo-component&gt;&gt;</code></td><td>src/components/add-todo.tsx</td><td>component</td><td>244</td></tr>
             
-            <tr><td><code>&lt;&lt;todo-item-component&gt;&gt;</code></td><td>src/components/todo-item.tsx</td><td>component</td><td>263</td></tr>
+            <tr><td><code>&lt;&lt;todo-item-component&gt;&gt;</code></td><td>src/components/todo-item.tsx</td><td>component</td><td>317</td></tr>
             
-            <tr><td><code>&lt;&lt;package-json&gt;&gt;</code></td><td>package.json</td><td>config</td><td>314</td></tr>
+            <tr><td><code>&lt;&lt;package-json&gt;&gt;</code></td><td>package.json</td><td>config</td><td>398</td></tr>
             
-            <tr><td><code>&lt;&lt;tsconfig&gt;&gt;</code></td><td>tsconfig.json</td><td>config</td><td>335</td></tr>
+            <tr><td><code>&lt;&lt;tsconfig&gt;&gt;</code></td><td>tsconfig.json</td><td>config</td><td>419</td></tr>
             
-            <tr><td><code>&lt;&lt;tailwind-config&gt;&gt;</code></td><td>tailwind.config.js</td><td>config</td><td>356</td></tr>
+            <tr><td><code>&lt;&lt;tailwind-config&gt;&gt;</code></td><td>tailwind.config.js</td><td>config</td><td>440</td></tr>
             
-            <tr><td><code>&lt;&lt;index-html&gt;&gt;</code></td><td>index.html</td><td>config</td><td>382</td></tr>
+            <tr><td><code>&lt;&lt;index-html&gt;&gt;</code></td><td>index.html</td><td>config</td><td>466</td></tr>
             
-            <tr><td><code>&lt;&lt;license&gt;&gt;</code></td><td>LICENSE</td><td>meta</td><td>453</td></tr>
+            <tr><td><code>&lt;&lt;license&gt;&gt;</code></td><td>LICENSE</td><td>meta</td><td>594</td></tr>
             
           </table>
         </details>

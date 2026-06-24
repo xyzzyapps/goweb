@@ -20,9 +20,9 @@ func TestStripControlSyntax(t *testing.T) {
 			want:  "hello\nworld",
 		},
 		{
-			name:  "chunk def line removed",
+			name:  "chunk def wrapped in fences",
 			lines: []string{"<<main>>=", "body", ">>"},
-			want:  "body",
+			want:  "```\nbody\n```",
 		},
 		{
 			name:  "references unwrapped",
@@ -35,12 +35,24 @@ func TestStripControlSyntax(t *testing.T) {
 			want:  "content",
 		},
 		{
-			name: "chunk def with attributes",
-			// <<main>>= file: main.go  →  isChunkDefStart skips it entirely
-			// (removeAngleBrackets would keep " file: main.go" but
-			// stripeControlSyntax now catches it with isChunkDefStart)
-			lines: []string{"<<main>>= file: main.go", "code", ">>"},
-			want:  "code",
+			name: "chunk def with file: attribute sets language",
+			lines: []string{"<<main>>= file: main.go", "package main", ">>"},
+			want:  "```go\npackage main\n```",
+		},
+		{
+			name: "chunk def with tsx file attribute",
+			lines: []string{"<<comp>>= file: src/app.tsx tags: component", "import { h } from 'preact'", ">>"},
+			want:  "```tsx\nimport { h } from 'preact'\n```",
+		},
+		{
+			name: "nested defs inside fenced block preserved",
+			lines: []string{"```", "<<outer>>=", "outer body", ">>", "```"},
+			want:  "```\nouter body\n```",
+		},
+		{
+			name: "fenced block with language preserved",
+			lines: []string{"```go", "func main() {}", "```"},
+			want:  "```go\nfunc main() {}\n```",
 		},
 	}
 

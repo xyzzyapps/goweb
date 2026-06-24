@@ -4,34 +4,73 @@
 <<import "components.md">>
 <<import "config.md">>
 
-This example demonstrates a TODO application built with **Preact**, **Bun**, and **Tailwind CSS**,
-structured as a literate program using goweb's chunk syntax.
+This literate program demonstrates a **Preact + Bun + Tailwind** TODO application
+while showcasing nearly all of goweb's features. Every source file, config file,
+and build script is defined as a named chunk inside this markdown document.
 
-Each component is defined as a named chunk with a `file:` attribute for tangling.
+## Goweb features demonstrated
 
-| Feature | How Demonstrated |
+| Feature | Usage in this example |
 |---|---|
-| `<<chunk>>=` definitions + `file:` | Each component tangled to `src/*.tsx` |
-| `<<import "file.md">>` | Cross-file refs between all `.md` files |
-| `<<if debug>>`/`<<end>>` | Conditional console.log for state changes |
-| `tags:` attribute | Chunks tagged `component`, `config`, `debug` |
-| `--var app-name` | Project name in `package.json` |
-| `--var debug=true\|false` | Toggle debug logging |
-| `{{var}}` substitution | `{{APP_NAME}}`, `{{AUTHOR}}` in config |
-| `<<override>>` | Replace components easily |
+| `<<chunk>>=` definitions | Every source file is a named chunk with a `file:` attribute |
+| `<<import "file.md">>` | Cross-file references between all `.md` files |
+| `<<ref>>` references | Handler stubs defined as named refs, resolved during tangle |
+| `<<if>>`/`<<else>>`/`<<end>>` | Conditional debug logging via `--var debug=true\|false` |
+| `tags:` attribute | Chunks tagged `component`, `config`, `debug`, `meta` |
+| `file:` attribute | Each chunk maps directly to a source or config file |
+| `--var` variables | `APP_NAME`, `AUTHOR`, `debug` injected at tangle/render time |
+| `{{var}}` substitution | `{{APP_NAME}}`, `{{AUTHOR}}` placeholders in JSON, HTML, LICENSE |
+| Language inference | `.tsx` → TypeScript, `.css` → CSS, `.json` → JSON in rendered output |
+| `goweb tangle` | Extract all chunks into runnable source files |
+| `goweb render` | Generate full HTML documentation with RTD theme |
+| `goweb weave` | Produce clean markdown with fenced code blocks |
+| Chunk order independence | Handler functions defined after their usage in the render tree |
+| Cross-file chunk references | Components imported from `components.md`, config from `config.md` |
 
 ## Usage
 
 ```bash
-# Tangle all source files
+# Tangle all source files into the examples/preact-todo/ directory
 goweb tangle --var APP_NAME="Todo App" --var AUTHOR="You" main.md
 
-# With debug logging
+# With debug logging (adds console.log statements)
 goweb tangle --var debug=true main.md
 
-# Run with bun
+# Install dependencies and run
 bun install
 bun run dev
+
+# Generate HTML documentation with Read the Docs theme
+goweb render main.md --var debug=true --var APP_NAME="Todo App" --var AUTHOR="You" > todo.html
+```
+
+## How the chunks are organized
+
+The example is split across four files:
+
+- **`main.md`** (this file) — entry point with imports, overview, tangle/usage instructions, and the LICENSE chunk
+- **`app.md`** — the main `App` component with state management, filter buttons, and conditional debug logging
+- **`components.md`** — three presentational components (`AddTodo`, `TodoList`, `TodoItem`) with Tailwind styling
+- **`config.md`** — build configuration files (`package.json`, `tsconfig.json`, `tailwind.config.js`, `index.html`)
+
+Each file exports named chunks that are resolved during tangling. The `<<import "file.md">>>` directive merges the imported file's chunks into the namespace, so chunks defined in `components.md` can be referenced from `app.md`.
+
+## Chunk overriding
+
+The `TodoList` component chunk is tagged with `override-demo`. If you define a chunk with the same name
+in another file and mark it with `<<override>>`, goweb will replace the original definition.
+This is useful for swapping implementations without modifying the original source:
+
+```bash
+# Create an override chunk
+echo '<<todo-list-component>>= file: src/components/todo-list.tsx
+export function TodoList({ todos }) {
+  return <div>Custom implementation</div>;
+}
+>>' > override.md
+
+# Tangle with override
+goweb tangle --var APP_NAME="Todo App" main.md override.md
 ```
 
 ## Project Structure
@@ -43,18 +82,36 @@ examples/preact-todo/
 ├── components.md       # UI sub-components
 ├── config.md           # Build config files
 ├── package.json        # Tangled output — Bun project
-├── tsconfig.json       # TypeScript config
-├── tailwind.config.js  # Tailwind CSS config
+├── tsconfig.json       # TypeScript configuration
+├── tailwind.config.js  # Tailwind CSS theme
 ├── index.html          # HTML entry point
 └── src/
     ├── main.tsx        # Preact mount point
     ├── app.tsx         # App component
-    ├── style.css       # Tailwind imports
+    ├── style.css       # Tailwind directives
     └── components/
         ├── add-todo.tsx
         ├── todo-list.tsx
         └── todo-item.tsx
 ```
+
+## Conditional compilation with <<if>>
+
+The `app.md` file uses `<<if debug>>` / `<<end>>` directives to conditionally include
+`console.log` statements. When `--var debug=true` is passed, the debug chunks are included;
+otherwise they are stripped. This allows a single source to produce both production
+and development builds.
+
+## Tags and chunk metadata
+
+Chunks can be tagged with `tags:` for organization and filtering:
+
+- **`component`** — UI components tangled to `src/components/`
+- **`config`** — build configuration files
+- **`debug`** — conditional debug logging chunks
+- **`meta`** — metadata files like `LICENSE`
+
+The `goweb graph` command can display relationships between tagged chunks.
 
 ## License
 

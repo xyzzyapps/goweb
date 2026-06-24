@@ -2,17 +2,37 @@
 
 The App component is the main entry point of the Preact application.
 It manages global state (the todo list and active filter) using Preact's `useState` hook,
-and orchestrates the three sub-components defined in `components.md`:
+and orchestrates the three sub-components imported from `components.md`:
 `AddTodo`, `TodoList`, and `TodoItem`.
 
-The file exports two chunks:
+## Chunks in this file
+
+This file exports these files when tangled:
+
 - `src/style.css` — Tailwind CSS directives for base styling
 - `src/main.tsx` — Mounts the `<App />` component to the DOM
 - `src/app.tsx` — The full App component with state management and filter UI
 
-Each handler function (add, toggle, delete) is defined as a named chunk
-to demonstrate goweb's out-of-order chunk definitions. The debug logging
-chunks (`<<debug-log-*>>`) are only included when `--var debug=true`.
+## Goweb features shown
+
+**Chunk order independence.** The handler functions (`handleAdd`, `handleToggle`, `handleDelete`)
+are defined as separate named chunks (`<<app-add-todo>>`, `<<app-toggle-todo>>`, `<<app-delete-todo>>`)
+and referenced by `<<name>>` inside the `App` component. This means they can be defined
+**after** the render function that uses them — goweb resolves all references during tangling,
+so definition order doesn't matter.
+
+**Conditional compilation.** Debug logging chunks (`<<debug-log-add>>`, `<<debug-log-toggle>>`,
+`<<debug-log-delete>>`) are wrapped in `<<if debug>>` / `<<end>>` directives. When you tangle
+with `--var debug=true`, these chunks are included. When `debug` is not set, they are stripped.
+This lets you maintain debug code alongside production code without runtime overhead.
+
+**Cross-file references.** The `app.tsx` chunk imports from `./components/add-todo`,
+`./components/todo-list`, and `./components/todo-item`. These components are defined
+in `components.md` and imported via `<<import "components.md">>>` in `main.md`.
+
+**Chunk references for stubs.** The `app-todo-ul` reference is left as a placeholder
+inside the JSX. During tangling, any chunk named `<<app-todo-ul>>` (defined elsewhere)
+will be substituted in its place. This is useful for out-of-order definition.
 
 <<style-css>>= file: src/style.css tags: component
 @tailwind base;
@@ -24,7 +44,7 @@ body {
 }
 >>
 
-<<main-entry>>= file: src/main.tsx tags: component
+<<main-tsx>>= file: src/main.tsx tags: component
 import { render } from "preact";
 import { App } from "./app";
 import "./style.css";
@@ -35,7 +55,7 @@ if (root) {
 }
 >>
 
-<<app-component>>= file: src/app.tsx tags: component
+<<app-tsx>>= file: src/app.tsx tags: component
 import { useState } from "preact/hooks";
 import { AddTodo } from "./components/add-todo";
 import { TodoList } from "./components/todo-list";
@@ -162,20 +182,16 @@ const filtered = todos.filter((t) => {
 </ul>
 >>
 
-<<debug-log-add>>= tags: debug
 <<if debug>>
+<<debug-log-add>>=
 console.log("[debug] added todo:", title);
-<<end>>
 >>
 
-<<debug-log-toggle>>= tags: debug
-<<if debug>>
+<<debug-log-toggle>>=
 console.log("[debug] toggled todo:", id);
-<<end>>
 >>
 
-<<debug-log-delete>>= tags: debug
-<<if debug>>
+<<debug-log-delete>>=
 console.log("[debug] deleted todo:", id);
-<<end>>
 >>
+<<end>>

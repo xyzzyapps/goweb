@@ -461,7 +461,10 @@ func renderDefaultTheme(data PageData) string {
 <style>
 * { box-sizing:border-box; margin:0; padding:0; }
 html { font-size:100%; }
-.wy-body-for-nav { background:#fcfcfc; }
+.wy-body-for-nav {
+  background:#fcfcfc;
+  font-family:Lato,"Helvetica Neue",Helvetica,Arial,sans-serif;
+}
 .wy-nav-side {
   position:fixed; top:0; bottom:0; left:0;
   width:300px; z-index:200;
@@ -473,11 +476,6 @@ html { font-size:100%; }
   display:block; width:300px; padding:12px 18px;
   margin-bottom:0; z-index:200;
   background:#2980b9; text-align:center;
-}
-.wy-side-nav-search input[type=text] {
-  width:100%; border-radius:50px; padding:6px 12px;
-  border:none; font-size:0.875em;
-  font-family:Lato,"Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 .wy-side-nav-search .icon-home { color:#fcfcfc; font-size:1.25em; font-weight:700; text-decoration:none; }
 .wy-menu-vertical { padding-bottom:2em; }
@@ -647,9 +645,6 @@ html { font-size:100%; }
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
         <a href="#" class="icon-home"> goweb</a>
-        <form role="search" class="wy-form" action="#" method="get">
-          <input type="text" name="q" placeholder="Search docs" disabled>
-        </form>
       </div>
       <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
         <p class="caption" role="heading"><span class="caption-text">Page</span></p>
@@ -664,10 +659,6 @@ html { font-size:100%; }
           {{end}}
         </ul>
         {{end}}
-        <p class="caption" role="heading"><span class="caption-text">Source</span></p>
-        <ul>
-          <li class="toctree-l1"><a href="{{.Source}}">View source</a></li>
-        </ul>
       </div>
     </div>
   </nav>
@@ -685,9 +676,6 @@ html { font-size:100%; }
           <ul class="wy-breadcrumbs">
             <li><a href="#" class="icon-home"> Home</a></li>
             <li class="breadcrumb-item active">{{.Title}}</li>
-            <li class="wy-breadcrumbs-aside">
-              <a href="{{.Source}}">View source</a>
-            </li>
           </ul>
           <hr>
         </div>
