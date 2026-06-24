@@ -1,7 +1,18 @@
 # App Component
 
-The main App component manages global state using Preact hooks.
-It imports sub-components from `components.md`.
+The App component is the main entry point of the Preact application.
+It manages global state (the todo list and active filter) using Preact's `useState` hook,
+and orchestrates the three sub-components defined in `components.md`:
+`AddTodo`, `TodoList`, and `TodoItem`.
+
+The file exports two chunks:
+- `src/style.css` — Tailwind CSS directives for base styling
+- `src/main.tsx` — Mounts the `<App />` component to the DOM
+- `src/app.tsx` — The full App component with state management and filter UI
+
+Each handler function (add, toggle, delete) is defined as a named chunk
+to demonstrate goweb's out-of-order chunk definitions. The debug logging
+chunks (`<<debug-log-*>>`) are only included when `--var debug=true`.
 
 <<style-css>>= file: src/style.css tags: component
 @tailwind base;

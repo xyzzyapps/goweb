@@ -1,7 +1,14 @@
 # UI Components
 
-This file defines reusable Preact components for the TODO app.
-Each component is a chunk with a `file:` attribute for tangling.
+This file defines three reusable Preact components for the TODO app.
+Each component is a named chunk with a `file:` attribute that determines
+the output path during tangling.
+
+- **AddTodo** (`src/components/add-todo.tsx`) — Controlled form with input and submit button. Uses `useState` for local input state.
+- **TodoList** (`src/components/todo-list.tsx`) — Standalone list component that maps over todos. Tagged with `override-demo` to show how chunks can be replaced.
+- **TodoItem** (`src/components/todo-item.tsx`) — Single todo row with checkbox, title, and delete button. Uses Tailwind hover groups for the delete button.
+
+All three components are exported as named exports and imported by `app.tsx`.
 
 <<add-todo-component>>= file: src/components/add-todo.tsx tags: component
 import { useState } from "preact/hooks";

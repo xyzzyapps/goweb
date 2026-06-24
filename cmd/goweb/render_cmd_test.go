@@ -28,18 +28,19 @@ func TestExtractTitle(t *testing.T) {
 	}
 }
 
-func TestExtractMarkdownHeadings(t *testing.T) {
-	md := `# Main Title
-Some text
-## Section One
-More text
-### Sub Section
-Even more
-## Section Two
+func TestExtractHeadingsFromHTML(t *testing.T) {
+	html := `<h1 id="main-title">Main Title</h1>
+<p>Some text</p>
+<h2 id="section-one">Section One</h2>
+<p>More text</p>
+<h3 id="sub-section">Sub Section</h3>
+<p>Even more</p>
+<h2 id="section-two">Section Two</h2>
 `
-	headings := extractMarkdownHeadings(md)
+	headings := extractHeadingsFromHTML(html)
 	if len(headings) != 4 {
 		t.Errorf("expected 4 headings, got %d", len(headings))
+		return
 	}
 	if headings[0].Level != 1 || headings[0].Text != "Main Title" || headings[0].ID != "main-title" {
 		t.Errorf("heading 0: got Level=%d Text=%q ID=%q", headings[0].Level, headings[0].Text, headings[0].ID)
@@ -50,25 +51,31 @@ Even more
 	if headings[2].Level != 3 || headings[2].Text != "Sub Section" || headings[2].ID != "sub-section" {
 		t.Errorf("heading 2: got Level=%d Text=%q ID=%q", headings[2].Level, headings[2].Text, headings[2].ID)
 	}
+	if headings[3].Text != "Section Two" {
+		t.Errorf("heading 3 text = %q; want 'Section Two'", headings[3].Text)
+	}
 }
 
-func TestSlugify(t *testing.T) {
+func TestExpandVars(t *testing.T) {
+	vars := map[string]string{
+		"NAME": "World",
+		"VER":  "1.0",
+	}
 	tests := []struct {
 		input string
 		want  string
 	}{
-		{"Hello World", "hello-world"},
-		{"Hello   World", "hello-world"},
-		{"Special!@#Chars", "specialchars"},
-		{"Already-kebab", "already-kebab"},
-		{"--trim--", "trim"},
-		{"UPPERCASE", "uppercase"},
+		{"Hello {{NAME}}!", "Hello World!"},
+		{"Version {{VER}}", "Version 1.0"},
+		{"No vars here", "No vars here"},
+		{"{{MISSING}}", "{{MISSING}}"},
+		{"{{}}", "{{}}"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			got := slugify(tt.input)
+			got := expandVars(tt.input, vars)
 			if got != tt.want {
-				t.Errorf("slugify(%q) = %q; want %q", tt.input, got, tt.want)
+				t.Errorf("expandVars(%q) = %q; want %q", tt.input, got, tt.want)
 			}
 		})
 	}

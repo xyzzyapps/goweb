@@ -197,12 +197,6 @@ img { max-width:100%; height:auto; }
       
       <li class="toctree-l2"><a href="#usage">Usage</a></li>
       
-      <li class="toctree-l1"><a href="#tangle-all-source-files">Tangle all source files</a></li>
-      
-      <li class="toctree-l1"><a href="#with-debug-logging">With debug logging</a></li>
-      
-      <li class="toctree-l1"><a href="#run-with-bun">Run with bun</a></li>
-      
       <li class="toctree-l2"><a href="#project-structure">Project Structure</a></li>
       
       <li class="toctree-l2"><a href="#license">License</a></li>
@@ -221,8 +215,8 @@ img { max-width:100%; height:auto; }
   </nav>
   <div class="content-inner">
     <article>
-      <h1>Preact TODO App</h1>
-<h1>App Component</h1>
+      <h1 id="preact-todo-app">Preact TODO App</h1>
+<h1 id="app-component">App Component</h1>
 <p>The main App component manages global state using Preact hooks.
 It imports sub-components from <code>components.md</code>.</p>
 <p>@tailwind base;
@@ -343,7 +337,7 @@ return true;
     </li>
   )}
 </ul>
-<h1>UI Components</h1>
+<h1 id="ui-components">UI Components</h1>
 <p>This file defines reusable Preact components for the TODO app.
 Each component is a chunk with a <code>file:</code> attribute for tangling.</p>
 <p>import { useState } from &quot;preact/hooks&quot;;</p>
@@ -441,7 +435,7 @@ aria-label=&quot;Delete&quot;
 </div>
 );
 }</p>
-<h1>Build Configuration</h1>
+<h1 id="build-configuration">Build Configuration</h1>
 <p>This file defines all build configuration files for the Preact + Bun + Tailwind project.
 Each chunk uses a <code>file:</code> attribute to specify the output path.</p>
 <p>{
@@ -562,7 +556,7 @@ structured as a literate program using goweb's chunk syntax.</p>
 </tr>
 </tbody>
 </table>
-<h2>Usage</h2>
+<h2 id="usage">Usage</h2>
 <pre><code class="language-bash"># Tangle all source files
 goweb tangle --var APP_NAME=&quot;Todo App&quot; --var AUTHOR=&quot;You&quot; main.md
 
@@ -573,7 +567,7 @@ goweb tangle --var debug=true main.md
 bun install
 bun run dev
 </code></pre>
-<h2>Project Structure</h2>
+<h2 id="project-structure">Project Structure</h2>
 <pre><code>examples/preact-todo/
 ├── main.md             # Entry point (this file)
 ├── app.md              # App component definition
@@ -592,7 +586,7 @@ bun run dev
         ├── todo-list.tsx
         └── todo-item.tsx
 </code></pre>
-<h2>License</h2>
+<h2 id="license">License</h2>
 <p>MIT License</p>
 <p>Copyright (c) 2026 {{APP_NAME}}</p>
 <p>Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -619,11 +613,11 @@ SOFTWARE.</p>
       <table>
         <tr><th>Name</th><th>File</th><th>Tags</th><th>Line</th></tr>
         
-        <tr><td><code>&lt;&lt;style-css&gt;&gt;</code></td><td>src/style.css</td><td></td><td>8</td></tr>
+        <tr><td><code>&lt;&lt;style-css&gt;&gt;</code></td><td>src/style.css</td><td>component</td><td>8</td></tr>
         
-        <tr><td><code>&lt;&lt;main-entry&gt;&gt;</code></td><td>src/main.tsx</td><td></td><td>18</td></tr>
+        <tr><td><code>&lt;&lt;main-entry&gt;&gt;</code></td><td>src/main.tsx</td><td>component</td><td>18</td></tr>
         
-        <tr><td><code>&lt;&lt;app-component&gt;&gt;</code></td><td>src/app.tsx</td><td></td><td>29</td></tr>
+        <tr><td><code>&lt;&lt;app-component&gt;&gt;</code></td><td>src/app.tsx</td><td>component</td><td>29</td></tr>
         
         <tr><td><code>&lt;&lt;app-add-todo&gt;&gt;</code></td><td></td><td></td><td>101</td></tr>
         
@@ -635,27 +629,27 @@ SOFTWARE.</p>
         
         <tr><td><code>&lt;&lt;app-todo-ul&gt;&gt;</code></td><td></td><td></td><td>137</td></tr>
         
-        <tr><td><code>&lt;&lt;debug-log-add&gt;&gt;</code></td><td></td><td></td><td>156</td></tr>
+        <tr><td><code>&lt;&lt;debug-log-add&gt;&gt;</code></td><td></td><td>debug</td><td>156</td></tr>
         
-        <tr><td><code>&lt;&lt;debug-log-toggle&gt;&gt;</code></td><td></td><td></td><td>159</td></tr>
+        <tr><td><code>&lt;&lt;debug-log-toggle&gt;&gt;</code></td><td></td><td>debug</td><td>159</td></tr>
         
-        <tr><td><code>&lt;&lt;debug-log-delete&gt;&gt;</code></td><td></td><td></td><td>162</td></tr>
+        <tr><td><code>&lt;&lt;debug-log-delete&gt;&gt;</code></td><td></td><td>debug</td><td>162</td></tr>
         
-        <tr><td><code>&lt;&lt;add-todo-component&gt;&gt;</code></td><td>src/components/add-todo.tsx</td><td></td><td>169</td></tr>
+        <tr><td><code>&lt;&lt;add-todo-component&gt;&gt;</code></td><td>src/components/add-todo.tsx</td><td>component</td><td>169</td></tr>
         
-        <tr><td><code>&lt;&lt;todo-list-component&gt;&gt;</code></td><td>src/components/todo-list.tsx</td><td></td><td>207</td></tr>
+        <tr><td><code>&lt;&lt;todo-list-component&gt;&gt;</code></td><td>src/components/todo-list.tsx</td><td>component, override-demo</td><td>207</td></tr>
         
-        <tr><td><code>&lt;&lt;todo-item-component&gt;&gt;</code></td><td>src/components/todo-item.tsx</td><td></td><td>242</td></tr>
+        <tr><td><code>&lt;&lt;todo-item-component&gt;&gt;</code></td><td>src/components/todo-item.tsx</td><td>component</td><td>242</td></tr>
         
-        <tr><td><code>&lt;&lt;package-json&gt;&gt;</code></td><td>package.json</td><td></td><td>287</td></tr>
+        <tr><td><code>&lt;&lt;package-json&gt;&gt;</code></td><td>package.json</td><td>config</td><td>287</td></tr>
         
-        <tr><td><code>&lt;&lt;tsconfig&gt;&gt;</code></td><td>tsconfig.json</td><td></td><td>308</td></tr>
+        <tr><td><code>&lt;&lt;tsconfig&gt;&gt;</code></td><td>tsconfig.json</td><td>config</td><td>308</td></tr>
         
-        <tr><td><code>&lt;&lt;tailwind-config&gt;&gt;</code></td><td>tailwind.config.js</td><td></td><td>329</td></tr>
+        <tr><td><code>&lt;&lt;tailwind-config&gt;&gt;</code></td><td>tailwind.config.js</td><td>config</td><td>329</td></tr>
         
-        <tr><td><code>&lt;&lt;index-html&gt;&gt;</code></td><td>index.html</td><td></td><td>355</td></tr>
+        <tr><td><code>&lt;&lt;index-html&gt;&gt;</code></td><td>index.html</td><td>config</td><td>355</td></tr>
         
-        <tr><td><code>&lt;&lt;license&gt;&gt;</code></td><td>LICENSE</td><td></td><td>426</td></tr>
+        <tr><td><code>&lt;&lt;license&gt;&gt;</code></td><td>LICENSE</td><td>meta</td><td>426</td></tr>
         
       </table>
     </details>

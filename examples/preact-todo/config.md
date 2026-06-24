@@ -1,7 +1,13 @@
 # Build Configuration
 
 This file defines all build configuration files for the Preact + Bun + Tailwind project.
-Each chunk uses a `file:` attribute to specify the output path.
+Each chunk uses a `file:` attribute to specify the output path during tangling.
+
+The following files are generated:
+- **`package.json`** — Bun project manifest with `preact`, `tailwindcss`, and `typescript` dependencies. Uses `{{APP_NAME}}` and `{{AUTHOR}}` variables.
+- **`tsconfig.json`** — TypeScript configuration with `jsxImportSource` set to `"preact"` for JSX support.
+- **`tailwind.config.js`** — Tailwind CSS configuration with custom `primary` color palette and content paths.
+- **`index.html`** — Minimal HTML shell with Tailwind CDN, app mount point `<div id="app">`, and module script entry.
 
 <<package-json>>= file: package.json tags: config
 {

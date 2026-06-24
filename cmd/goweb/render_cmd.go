@@ -11,9 +11,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
+	gparser "github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
 
-	"github.com/manic/goweb/pkg/parser"
+	goparser "github.com/manic/goweb/pkg/parser"
 	"github.com/manic/goweb/pkg/preproc"
 	"github.com/manic/goweb/pkg/weave"
 )
@@ -112,9 +113,13 @@ func renderFile(sourcePath, tmplPath, outputPath string, vars map[string]string)
 	}
 	markdownContent := buf.String()
 
-	// Convert markdown to HTML.
+	// Expand {{var}} placeholders using --var flags.
+	markdownContent = expandVars(markdownContent, vars)
+
+	// Convert markdown to HTML with auto heading IDs.
 	mdRenderer := goldmark.New(
 		goldmark.WithExtensions(extension.GFM),
+		goldmark.WithParserOptions(gparser.WithAutoHeadingID()),
 		goldmark.WithRendererOptions(html.WithUnsafe()),
 	)
 	var htmlBuf bytes.Buffer
@@ -123,12 +128,13 @@ func renderFile(sourcePath, tmplPath, outputPath string, vars map[string]string)
 	}
 
 	// Build page data.
+	htmlContent := htmlBuf.String()
 	title := extractTitle(markdownContent)
 	chunks := extractChunkInfo(sourcePath, vars)
-	headings := extractMarkdownHeadings(markdownContent)
+	headings := extractHeadingsFromHTML(htmlContent)
 	pageData := PageData{
 		Title:    title,
-		Content:  template.HTML(htmlBuf.String()),
+		Content:  template.HTML(htmlContent),
 		Source:   sourcePath,
 		Chunks:   chunks,
 		Headings: headings,
@@ -261,9 +267,13 @@ func buildPage(path, siteDir string, vars map[string]string) (SitePage, error) {
 	}
 	markdownContent := buf.String()
 
-	// Convert markdown to HTML.
+	// Expand {{var}} placeholders.
+	markdownContent = expandVars(markdownContent, vars)
+
+	// Convert markdown to HTML with auto heading IDs.
 	mdRenderer := goldmark.New(
 		goldmark.WithExtensions(extension.GFM),
+		goldmark.WithParserOptions(gparser.WithAutoHeadingID()),
 		goldmark.WithRendererOptions(html.WithUnsafe()),
 	)
 	var htmlBuf bytes.Buffer
@@ -271,13 +281,14 @@ func buildPage(path, siteDir string, vars map[string]string) (SitePage, error) {
 		return SitePage{}, fmt.Errorf("rendering markdown: %w", err)
 	}
 
+	htmlContent := htmlBuf.String()
 	title := extractTitle(markdownContent)
 	chunks := extractChunkInfo(path, vars)
-	headings := extractMarkdownHeadings(markdownContent)
+	headings := extractHeadingsFromHTML(htmlContent)
 
 	return SitePage{
 		Title:    title,
-		Content:  template.HTML(htmlBuf.String()),
+		Content:  template.HTML(htmlContent),
 		Path:     relPath,
 		Source:   path,
 		Chunks:   chunks,
@@ -285,43 +296,108 @@ func buildPage(path, siteDir string, vars map[string]string) (SitePage, error) {
 	}, nil
 }
 
-// slugify converts a heading string to an HTML anchor ID,
-// matching the default goldmark slugifier algorithm.
-func slugify(s string) string {
-	var out strings.Builder
-	s = strings.ToLower(s)
-	for _, r := range s {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
-			out.WriteRune(r)
-		} else if r == ' ' || r == '_' {
-			if out.Len() > 0 && out.String()[out.Len()-1] != '-' {
-				out.WriteRune('-')
+// extractHeadingsFromHTML parses rendered HTML content and extracts
+// heading tags (h1-h3) with their goldmark-generated id attributes.
+// This guarantees sidebar TOC links match the actual heading anchors.
+func extractHeadingsFromHTML(htmlContent string) []Heading {
+	var headings []Heading
+	lines := strings.Split(htmlContent, "\n")
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		for level := 1; level <= 3; level++ {
+			prefix := fmt.Sprintf("<h%d id=\"", level)
+			if strings.HasPrefix(trimmed, prefix) {
+				rest := trimmed[len(prefix):]
+				endQuote := strings.Index(rest, "\"")
+				id := ""
+				if endQuote >= 0 {
+					id = rest[:endQuote]
+					rest = rest[endQuote+1:]
+				}
+				// Extract text after the closing >.
+				closeTag := strings.Index(rest, ">")
+				var text string
+				if closeTag >= 0 {
+					inner := rest[closeTag+1:]
+					endTag := strings.LastIndex(inner, "</h")
+					if endTag >= 0 {
+						text = inner[:endTag]
+					} else {
+						text = inner
+					}
+				}
+				headings = append(headings, Heading{
+					Level: level,
+					ID:    id,
+					Text:  stripHTMLTags(text),
+				})
+				break
 			}
 		}
 	}
-	result := out.String()
-	result = strings.Trim(result, "-")
-	return result
+	return headings
 }
 
-// extractMarkdownHeadings parses raw markdown content and returns
-// all h1, h2, h3 headings with goldmark-compatible anchor IDs.
-func extractMarkdownHeadings(markdown string) []Heading {
-	var headings []Heading
-	for _, line := range strings.Split(markdown, "\n") {
-		trimmed := strings.TrimSpace(line)
-		if strings.HasPrefix(trimmed, "# ") {
-			text := strings.TrimPrefix(trimmed, "# ")
-			headings = append(headings, Heading{Level: 1, ID: slugify(text), Text: text})
-		} else if strings.HasPrefix(trimmed, "## ") {
-			text := strings.TrimPrefix(trimmed, "## ")
-			headings = append(headings, Heading{Level: 2, ID: slugify(text), Text: text})
-		} else if strings.HasPrefix(trimmed, "### ") {
-			text := strings.TrimPrefix(trimmed, "### ")
-			headings = append(headings, Heading{Level: 3, ID: slugify(text), Text: text})
+// stripHTMLTags removes simple HTML tags from a string for clean heading display.
+func stripHTMLTags(s string) string {
+	var out strings.Builder
+	inTag := false
+	for _, r := range s {
+		if r == '<' {
+			inTag = true
+			continue
+		}
+		if r == '>' {
+			inTag = false
+			continue
+		}
+		if !inTag {
+			out.WriteRune(r)
 		}
 	}
-	return headings
+	return strings.TrimSpace(out.String())
+}
+
+// expandVars replaces {{name}} placeholders with values from vars.
+// Unknown variables are left as-is.
+func expandVars(s string, vars map[string]string) string {
+	if len(vars) == 0 {
+		return s
+	}
+	var result strings.Builder
+	i := 0
+	for i < len(s) {
+		start := strings.Index(s[i:], "{{")
+		if start == -1 {
+			result.WriteString(s[i:])
+			break
+		}
+		start += i
+		result.WriteString(s[i:start])
+
+		end := strings.Index(s[start+2:], "}}")
+		if end == -1 {
+			result.WriteString(s[start:])
+			break
+		}
+		end += start + 2
+
+		varName := strings.TrimSpace(s[start+2 : end])
+		if varName == "" {
+			result.WriteString("{{}}")
+			i = end + 2
+			continue
+		}
+
+		if val, ok := vars[varName]; ok {
+			result.WriteString(val)
+		} else {
+			// Variable not set — leave the placeholder as-is.
+			result.WriteString(s[start : end+2])
+		}
+		i = end + 2
+	}
+	return result.String()
 }
 
 // extractTitle gets the first # heading from markdown content.
@@ -341,7 +417,7 @@ func extractChunkInfo(sourcePath string, vars map[string]string) []ChunkInfo {
 	if err != nil {
 		return nil
 	}
-	doc, err := parser.ParseLines(preprocResult.Lines, sourcePath)
+	doc, err := goparser.ParseLines(preprocResult.Lines, sourcePath)
 	if err != nil {
 		return nil
 	}
