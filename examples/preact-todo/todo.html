@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preact TODO App — goweb</title>
+<style>
+:root {
+  --sidebar-bg: #2c3e50;
+  --sidebar-text: #b3b3b3;
+  --sidebar-active: #ffffff;
+  --sidebar-link: #2980b9;
+  --sidebar-width: 300px;
+  --content-bg: #fcfcfc;
+  --content-text: #404040;
+  --content-link: #2980b9;
+  --code-bg: #f5f5f5;
+  --border: #e1e4e5;
+  --mono-font: "SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sidebar-bg: #1a1d23;
+    --content-bg: #0d1117;
+    --content-text: #c9d1d9;
+    --content-link: #58a6ff;
+    --code-bg: #161b22;
+    --border: #30363d;
+  }
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+body {
+  font-family: system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color: var(--content-text);
+  background: var(--content-bg);
+  display: flex;
+  min-height: 100vh;
+}
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  position: fixed;
+  top: 0; left: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-header { padding:24px 20px 16px; border-bottom:1px solid rgba(255,255,255,0.1); }
+.sidebar-brand { color:#fff; font-size:1.25em; font-weight:700; text-decoration:none; }
+.sidebar-search { margin-top:12px; }
+.sidebar-search input {
+  width:100%; padding:6px 12px;
+  border:1px solid rgba(255,255,255,0.2); border-radius:4px;
+  background:rgba(255,255,255,0.1); color:#fff; font-size:0.875em;
+}
+.sidebar-search input::placeholder { color:var(--sidebar-text); }
+.sidebar-nav { flex:1; padding:8px 0; overflow-y:auto; }
+.sidebar-nav ul { list-style:none; padding:0; }
+.sidebar-nav li a {
+  display:block; padding:5px 20px; color:var(--sidebar-text);
+  text-decoration:none; font-size:0.9em;
+  border-left:3px solid transparent;
+}
+.sidebar-nav li a:hover, .sidebar-nav li.current a {
+  color:var(--sidebar-active); background:rgba(255,255,255,0.05);
+}
+.sidebar-nav li.current a { border-left-color:var(--sidebar-link); }
+.sidebar-nav li.toctree-l2 a { padding-left:36px; }
+.sidebar-nav li.toctree-l3 a { padding-left:52px; }
+.sidebar-nav .sidebar-heading {
+  padding:16px 20px 4px; font-size:0.75em;
+  text-transform:uppercase; letter-spacing:0.1em;
+  color:rgba(255,255,255,0.4); font-weight:600;
+}
+.sidebar-footer {
+  padding:12px 20px; border-top:1px solid rgba(255,255,255,0.1);
+  font-size:0.85em;
+}
+.sidebar-footer a { color:var(--sidebar-link); text-decoration:none; }
+.sidebar-footer a:hover { text-decoration:underline; }
+.content {
+  margin-left: var(--sidebar-width);
+  flex: 1;
+  max-width: 100%;
+  padding: 0;
+}
+.content-inner { max-width: 800px; padding: 40px 48px; margin: 0 auto; }
+.breadcrumb {
+  padding: 12px 48px; background: #fff;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85em; color: #999;
+}
+.breadcrumb a { color: var(--sidebar-link); text-decoration:none; }
+.breadcrumb a:hover { text-decoration:underline; }
+.breadcrumb span { color: var(--content-text); }
+h1 { font-size:2em; margin:0 0 0.5em; color:#1a1a1a; font-weight:700; }
+h2 { font-size:1.5em; margin:1.5em 0 0.5em; color:#1a1a1a; font-weight:700; }
+h3 { font-size:1.25em; margin:1.25em 0 0.5em; color:#333; }
+h4 { font-size:1em; margin:1.33em 0; font-weight:600; }
+p { margin:1em 0; line-height:1.7; }
+a { color:var(--content-link); text-decoration:none; }
+a:hover { text-decoration:underline; }
+code {
+  font-family:var(--mono-font); background:var(--code-bg);
+  padding:0.15em 0.4em; border-radius:3px; font-size:0.85em; color:#c7254e;
+}
+pre {
+  background:var(--code-bg); border:1px solid var(--border);
+  border-radius:3px; padding:12px 16px; overflow-x:auto;
+  margin:1em 0; line-height:1.5;
+}
+pre code { background:none; padding:0; border-radius:0; color:inherit; }
+blockquote {
+  border-left:4px solid #2980b9; background:#eaf2f8;
+  padding:12px 16px; margin:1em 0; border-radius:0 3px 3px 0;
+}
+blockquote p { margin:0; }
+blockquote.warning { border-left-color:#e74c3c; background:#fdeaea; }
+blockquote.note { border-left-color:#2980b9; background:#eaf2f8; }
+blockquote.tip { border-left-color:#27ae60; background:#e8f8f0; }
+table { border-collapse:collapse; width:100%; margin:1.5em 0; font-size:0.9em; }
+th, td { border:1px solid var(--border); padding:8px 12px; text-align:left; }
+th { background:#f5f5f5; font-weight:600; }
+tr:nth-child(even) td { background:#fafafa; }
+ul, ol { padding-left:2em; margin:1em 0; }
+hr { border:none; border-top:1px solid var(--border); margin:2em 0; }
+img { max-width:100%; height:auto; }
+.chunk-table {
+  margin:2em 0; border:1px solid var(--border);
+  border-radius:3px; padding:12px 16px; background:#fafafa;
+}
+.chunk-table summary { cursor:pointer; font-weight:600; color:var(--content-link); font-size:0.9em; }
+.chunk-table table { margin:0.5em 0 0; font-size:0.8em; }
+.chunk-table th { background:#e8e8e8; }
+.footer {
+  margin-top:3em; padding-top:1.5em; border-top:2px solid var(--border);
+  font-size:0.85em; color:#999; display:flex; justify-content:space-between;
+}
+.footer a { color:var(--sidebar-link); }
+.sidebar-toggle {
+  display:none; position:fixed; top:12px; left:12px; z-index:20;
+  background:var(--sidebar-bg); color:#fff; border:none;
+  border-radius:4px; padding:8px 12px; font-size:1.2em; cursor:pointer;
+}
+@media (max-width: 768px) {
+  .sidebar { transform:translateX(-100%); transition:transform 0.3s ease; }
+  .sidebar.open { transform:translateX(0); }
+  .content { margin-left:0; }
+  .content-inner, .breadcrumb { padding-left:24px; padding-right:24px; }
+  .sidebar-toggle { display:block; }
+}
+@media (prefers-color-scheme: dark) {
+  h1, h2, h3 { color:#e6edf3; }
+  .breadcrumb { background:var(--content-bg); border-bottom-color:var(--border); }
+  blockquote { background:#0d1d3a; }
+  blockquote.warning { background:#2d1b1b; }
+  blockquote.tip { background:#1b2d1b; }
+  th { background:#21262d; }
+  tr:nth-child(even) td { background:#161b22; }
+  .chunk-table { background:#161b22; }
+  .chunk-table th { background:#21262d; }
+  code { color:#f0c674; }
+  .footer { border-top-color:var(--border); }
+}
+</style>
+</head>
+<body>
+
+<button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a href="#" class="sidebar-brand">goweb</a>
+    <div class="sidebar-search">
+      <input type="text" placeholder="Search docs..." disabled>
+    </div>
+  </div>
+  <div class="sidebar-nav">
+    <ul>
+      <li class="current"><a href="#">Preact TODO App</a></li>
+    </ul>
+    
+    <div class="sidebar-heading">On this page</div>
+    <ul>
+      
+      <li class="toctree-l1"><a href="#preact-todo-app">Preact TODO App</a></li>
+      
+      <li class="toctree-l1"><a href="#app-component">App Component</a></li>
+      
+      <li class="toctree-l1"><a href="#ui-components">UI Components</a></li>
+      
+      <li class="toctree-l1"><a href="#build-configuration">Build Configuration</a></li>
+      
+      <li class="toctree-l2"><a href="#usage">Usage</a></li>
+      
+      <li class="toctree-l1"><a href="#tangle-all-source-files">Tangle all source files</a></li>
+      
+      <li class="toctree-l1"><a href="#with-debug-logging">With debug logging</a></li>
+      
+      <li class="toctree-l1"><a href="#run-with-bun">Run with bun</a></li>
+      
+      <li class="toctree-l2"><a href="#project-structure">Project Structure</a></li>
+      
+      <li class="toctree-l2"><a href="#license">License</a></li>
+      
+    </ul>
+    
+  </div>
+  <div class="sidebar-footer">
+    <a href="examples%5cpreact-todo%5cmain.md">View source</a>
+  </div>
+</nav>
+
+<div class="content">
+  <nav class="breadcrumb">
+    <a href="#">Home</a> / <span>Preact TODO App</span>
+  </nav>
+  <div class="content-inner">
+    <article>
+      <h1>Preact TODO App</h1>
+<h1>App Component</h1>
+<p>The main App component manages global state using Preact hooks.
+It imports sub-components from <code>components.md</code>.</p>
+<p>@tailwind base;
+@tailwind components;
+@tailwind utilities;</p>
+<p>body {
+font-family: system-ui, -apple-system, &quot;Segoe UI&quot;, Roboto, sans-serif;
+}</p>
+<p>import { render } from &quot;preact&quot;;
+import { App } from &quot;./app&quot;;
+import &quot;./style.css&quot;;</p>
+<p>const root = document.getElementById(&quot;app&quot;);
+if (root) {
+render(<App />, root);
+}</p>
+<p>import { useState } from &quot;preact/hooks&quot;;
+import { AddTodo } from &quot;./components/add-todo&quot;;
+import { TodoList } from &quot;./components/todo-list&quot;;
+import { TodoItem } from &quot;./components/todo-item&quot;;</p>
+<p>interface Todo {
+id: number;
+title: string;
+done: boolean;
+}</p>
+<p>export function App() {
+const [todos, setTodos] = useState&lt;Todo[]&gt;([]);
+const [filter, setFilter] = useState&lt;&quot;all&quot; | &quot;active&quot; | &quot;done&quot;&gt;(&quot;all&quot;);</p>
+<p>app-add-todo
+app-toggle-todo
+app-delete-todo
+app-filter-todos</p>
+<p>return (
+<div class="max-w-lg mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg">
+<h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">
+{{APP_NAME}}
+</h1></p>
+<pre><code>  &lt;AddTodo onAdd={handleAdd} /&gt;
+
+  &lt;div class=&quot;flex gap-2 my-4&quot;&gt;
+    &lt;button
+      onClick={() =&gt; setFilter(&quot;all&quot;)}
+      class={&quot;px-3 py-1 rounded-full text-sm &quot; +
+        (filter === &quot;all&quot;
+          ? &quot;bg-blue-500 text-white&quot;
+          : &quot;bg-gray-200 text-gray-700&quot;)
+      }
+    &gt;
+      All
+    &lt;/button&gt;
+    &lt;button
+      onClick={() =&gt; setFilter(&quot;active&quot;)}
+      class={&quot;px-3 py-1 rounded-full text-sm &quot; +
+        (filter === &quot;active&quot;
+          ? &quot;bg-blue-500 text-white&quot;
+          : &quot;bg-gray-200 text-gray-700&quot;)
+      }
+    &gt;
+      Active
+    &lt;/button&gt;
+    &lt;button
+      onClick={() =&gt; setFilter(&quot;done&quot;)}
+      class={&quot;px-3 py-1 rounded-full text-sm &quot; +
+        (filter === &quot;done&quot;
+          ? &quot;bg-blue-500 text-white&quot;
+          : &quot;bg-gray-200 text-gray-700&quot;)
+      }
+    &gt;
+      Done
+    &lt;/button&gt;
+  &lt;/div&gt;
+
+  app-todo-ul
+
+  &lt;div class=&quot;mt-4 text-sm text-gray-500 text-center&quot;&gt;
+    {todos.length} item{todos.length !== 1 ? &quot;s&quot; : &quot;&quot;} total
+  &lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+<p>);
+}</p>
+<p>function handleAdd(title: string) {
+const newTodo: Todo = {
+id: Date.now(),
+title,
+done: false,
+};
+setTodos((prev) =&gt; [...prev, newTodo]);
+debug-log-add
+}</p>
+<p>function handleToggle(id: number) {
+setTodos((prev) =&gt;
+prev.map((t) =&gt; (t.id === id ? { ...t, done: !t.done } : t))
+);
+debug-log-toggle
+}</p>
+<p>function handleDelete(id: number) {
+setTodos((prev) =&gt; prev.filter((t) =&gt; t.id !== id));
+debug-log-delete
+}</p>
+<p>const filtered = todos.filter((t) =&gt; {
+if (filter === &quot;active&quot;) return !t.done;
+if (filter === &quot;done&quot;) return t.done;
+return true;
+});</p>
+<ul class="space-y-2">
+  {filtered.map((todo) => (
+    <li key={todo.id}>
+      <TodoItem
+        todo={todo}
+        onToggle={handleToggle}
+        onDelete={handleDelete}
+      />
+    </li>
+  ))}
+  {filtered.length === 0 && (
+    <li class="text-gray-400 text-center py-4">
+      No todos yet. Add one above!
+    </li>
+  )}
+</ul>
+<h1>UI Components</h1>
+<p>This file defines reusable Preact components for the TODO app.
+Each component is a chunk with a <code>file:</code> attribute for tangling.</p>
+<p>import { useState } from &quot;preact/hooks&quot;;</p>
+<p>interface AddTodoProps {
+onAdd: (title: string) =&gt; void;
+}</p>
+<p>export function AddTodo({ onAdd }: AddTodoProps) {
+const [value, setValue] = useState(&quot;&quot;);</p>
+<p>function handleSubmit(e: Event) {
+e.preventDefault();
+const trimmed = value.trim();
+if (trimmed === &quot;&quot;) return;
+onAdd(trimmed);
+setValue(&quot;&quot;);
+}</p>
+<p>return (
+<form onSubmit={handleSubmit} class="flex gap-2">
+&lt;input
+type=&quot;text&quot;
+value={value}
+onInput={(e) =&gt; setValue((e.target as HTMLInputElement).value)}
+placeholder=&quot;What needs to be done?&quot;
+class=&quot;flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400&quot;
+/&gt;
+<button
+type="submit"
+class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+>
+Add
+</button>
+</form>
+);
+}</p>
+<p>// This component is imported by app.tsx inline via Array.map.
+// It exists as a standalone export for potential reuse.
+import type { JSX } from &quot;preact&quot;;</p>
+<p>interface Todo {
+id: number;
+title: string;
+done: boolean;
+}</p>
+<p>interface TodoListProps {
+todos: Todo[];
+onToggle: (id: number) =&gt; void;
+onDelete: (id: number) =&gt; void;
+}</p>
+<p>// In a more complex app this would handle virtualization or grouping.
+export function TodoList({ todos, onToggle, onDelete }: TodoListProps) {
+return (
+<ul class="space-y-2">
+{todos.map((todo) =&gt; (
+<li key={todo.id}>
+<TodoItem
+todo={todo}
+onToggle={onToggle}
+onDelete={onDelete}
+/>
+</li>
+))}
+</ul>
+);
+}</p>
+<p>import type { JSX } from &quot;preact&quot;;</p>
+<p>interface Todo {
+id: number;
+title: string;
+done: boolean;
+}</p>
+<p>interface TodoItemProps {
+todo: Todo;
+onToggle: (id: number) =&gt; void;
+onDelete: (id: number) =&gt; void;
+}</p>
+<p>export function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
+return (
+<div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
+&lt;input
+type=&quot;checkbox&quot;
+checked={todo.done}
+onClick={() =&gt; onToggle(todo.id)}
+class=&quot;w-5 h-5 text-blue-500 rounded focus:ring-blue-400 cursor-pointer&quot;
+/&gt;
+&lt;span
+class={&quot;flex-1 &quot; + (todo.done ? &quot;line-through text-gray-400&quot; : &quot;text-gray-800&quot;)}
+&gt;
+{todo.title}
+</span>
+&lt;button
+onClick={() =&gt; onDelete(todo.id)}
+class=&quot;opacity-0 group-hover:opacity-100 px-2 py-1 text-sm text-red-500 hover:bg-red-100 rounded transition-all&quot;
+aria-label=&quot;Delete&quot;
+&gt;
+✕
+</button>
+</div>
+);
+}</p>
+<h1>Build Configuration</h1>
+<p>This file defines all build configuration files for the Preact + Bun + Tailwind project.
+Each chunk uses a <code>file:</code> attribute to specify the output path.</p>
+<p>{
+&quot;name&quot;: &quot;{{APP_NAME}}&quot;,
+&quot;version&quot;: &quot;1.0.0&quot;,
+&quot;author&quot;: &quot;{{AUTHOR}}&quot;,
+&quot;scripts&quot;: {
+&quot;dev&quot;: &quot;bun run --hot src/main.tsx&quot;,
+&quot;build&quot;: &quot;bun build src/main.tsx --outdir dist&quot;,
+&quot;preview&quot;: &quot;bun run dist/index.html&quot;
+},
+&quot;dependencies&quot;: {
+&quot;preact&quot;: &quot;^10.26.0&quot;
+},
+&quot;devDependencies&quot;: {
+&quot;tailwindcss&quot;: &quot;^3.4.0&quot;,
+&quot;typescript&quot;: &quot;^5.6.0&quot;,
+&quot;@types/node&quot;: &quot;^22.0.0&quot;
+}
+}</p>
+<p>{
+&quot;compilerOptions&quot;: {
+&quot;target&quot;: &quot;ES2022&quot;,
+&quot;module&quot;: &quot;ESNext&quot;,
+&quot;moduleResolution&quot;: &quot;bundler&quot;,
+&quot;jsx&quot;: &quot;react-jsx&quot;,
+&quot;jsxImportSource&quot;: &quot;preact&quot;,
+&quot;strict&quot;: true,
+&quot;esModuleInterop&quot;: true,
+&quot;skipLibCheck&quot;: true,
+&quot;forceConsistentCasingInFileNames&quot;: true,
+&quot;outDir&quot;: &quot;dist&quot;,
+&quot;rootDir&quot;: &quot;src&quot;,
+&quot;declaration&quot;: true
+},
+&quot;include&quot;: [&quot;src/**/*&quot;],
+&quot;exclude&quot;: [&quot;node_modules&quot;, &quot;dist&quot;]
+}</p>
+<p>/** @type {import('tailwindcss').Config} <em>/
+module.exports = {
+content: [&quot;./src/**/</em>.{tsx,ts}&quot;, &quot;./index.html&quot;],
+theme: {
+extend: {
+colors: {
+primary: {
+50: &quot;#eff6ff&quot;,
+100: &quot;#dbeafe&quot;,
+200: &quot;#bfdbfe&quot;,
+300: &quot;#93c5fd&quot;,
+400: &quot;#60a5fa&quot;,
+500: &quot;#3b82f6&quot;,
+600: &quot;#2563eb&quot;,
+700: &quot;#1d4ed8&quot;,
+800: &quot;#1e40af&quot;,
+900: &quot;#1e3a8a&quot;,
+},
+},
+},
+},
+plugins: [],
+};</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{APP_NAME}}</title>
+  <link rel="stylesheet" href="src/style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div id="app"></div>
+  <script type="module" src="src/main.tsx"></script>
+</body>
+</html>
+<p>This example demonstrates a TODO application built with <strong>Preact</strong>, <strong>Bun</strong>, and <strong>Tailwind CSS</strong>,
+structured as a literate program using goweb's chunk syntax.</p>
+<p>Each component is defined as a named chunk with a <code>file:</code> attribute for tangling.</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>How Demonstrated</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>`` definitions + <code>file:</code></td>
+<td>Each component tangled to <code>src/*.tsx</code></td>
+</tr>
+<tr>
+<td><code>import &quot;file.md&quot;</code></td>
+<td>Cross-file refs between all <code>.md</code> files</td>
+</tr>
+<tr>
+<td><code>if debug</code>/<code>end</code></td>
+<td>Conditional console.log for state changes</td>
+</tr>
+<tr>
+<td><code>tags:</code> attribute</td>
+<td>Chunks tagged <code>component</code>, <code>config</code>, <code>debug</code></td>
+</tr>
+<tr>
+<td><code>--var app-name</code></td>
+<td>Project name in <code>package.json</code></td>
+</tr>
+<tr>
+<td><code>--var debug=true|false</code></td>
+<td>Toggle debug logging</td>
+</tr>
+<tr>
+<td><code>{{var}}</code> substitution</td>
+<td><code>{{APP_NAME}}</code>, <code>{{AUTHOR}}</code> in config</td>
+</tr>
+<tr>
+<td><code>override</code></td>
+<td>Replace components easily</td>
+</tr>
+</tbody>
+</table>
+<h2>Usage</h2>
+<pre><code class="language-bash"># Tangle all source files
+goweb tangle --var APP_NAME=&quot;Todo App&quot; --var AUTHOR=&quot;You&quot; main.md
+
+# With debug logging
+goweb tangle --var debug=true main.md
+
+# Run with bun
+bun install
+bun run dev
+</code></pre>
+<h2>Project Structure</h2>
+<pre><code>examples/preact-todo/
+├── main.md             # Entry point (this file)
+├── app.md              # App component definition
+├── components.md       # UI sub-components
+├── config.md           # Build config files
+├── package.json        # Tangled output — Bun project
+├── tsconfig.json       # TypeScript config
+├── tailwind.config.js  # Tailwind CSS config
+├── index.html          # HTML entry point
+└── src/
+    ├── main.tsx        # Preact mount point
+    ├── app.tsx         # App component
+    ├── style.css       # Tailwind imports
+    └── components/
+        ├── add-todo.tsx
+        ├── todo-list.tsx
+        └── todo-item.tsx
+</code></pre>
+<h2>License</h2>
+<p>MIT License</p>
+<p>Copyright (c) 2026 {{APP_NAME}}</p>
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:</p>
+<p>The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.</p>
+<p>THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</p>
+
+    </article>
+
+    
+    <details class="chunk-table">
+      <summary>Code chunks (19)</summary>
+      <table>
+        <tr><th>Name</th><th>File</th><th>Tags</th><th>Line</th></tr>
+        
+        <tr><td><code>&lt;&lt;style-css&gt;&gt;</code></td><td>src/style.css</td><td></td><td>8</td></tr>
+        
+        <tr><td><code>&lt;&lt;main-entry&gt;&gt;</code></td><td>src/main.tsx</td><td></td><td>18</td></tr>
+        
+        <tr><td><code>&lt;&lt;app-component&gt;&gt;</code></td><td>src/app.tsx</td><td></td><td>29</td></tr>
+        
+        <tr><td><code>&lt;&lt;app-add-todo&gt;&gt;</code></td><td></td><td></td><td>101</td></tr>
+        
+        <tr><td><code>&lt;&lt;app-toggle-todo&gt;&gt;</code></td><td></td><td></td><td>113</td></tr>
+        
+        <tr><td><code>&lt;&lt;app-delete-todo&gt;&gt;</code></td><td></td><td></td><td>122</td></tr>
+        
+        <tr><td><code>&lt;&lt;app-filter-todos&gt;&gt;</code></td><td></td><td></td><td>129</td></tr>
+        
+        <tr><td><code>&lt;&lt;app-todo-ul&gt;&gt;</code></td><td></td><td></td><td>137</td></tr>
+        
+        <tr><td><code>&lt;&lt;debug-log-add&gt;&gt;</code></td><td></td><td></td><td>156</td></tr>
+        
+        <tr><td><code>&lt;&lt;debug-log-toggle&gt;&gt;</code></td><td></td><td></td><td>159</td></tr>
+        
+        <tr><td><code>&lt;&lt;debug-log-delete&gt;&gt;</code></td><td></td><td></td><td>162</td></tr>
+        
+        <tr><td><code>&lt;&lt;add-todo-component&gt;&gt;</code></td><td>src/components/add-todo.tsx</td><td></td><td>169</td></tr>
+        
+        <tr><td><code>&lt;&lt;todo-list-component&gt;&gt;</code></td><td>src/components/todo-list.tsx</td><td></td><td>207</td></tr>
+        
+        <tr><td><code>&lt;&lt;todo-item-component&gt;&gt;</code></td><td>src/components/todo-item.tsx</td><td></td><td>242</td></tr>
+        
+        <tr><td><code>&lt;&lt;package-json&gt;&gt;</code></td><td>package.json</td><td></td><td>287</td></tr>
+        
+        <tr><td><code>&lt;&lt;tsconfig&gt;&gt;</code></td><td>tsconfig.json</td><td></td><td>308</td></tr>
+        
+        <tr><td><code>&lt;&lt;tailwind-config&gt;&gt;</code></td><td>tailwind.config.js</td><td></td><td>329</td></tr>
+        
+        <tr><td><code>&lt;&lt;index-html&gt;&gt;</code></td><td>index.html</td><td></td><td>355</td></tr>
+        
+        <tr><td><code>&lt;&lt;license&gt;&gt;</code></td><td>LICENSE</td><td></td><td>426</td></tr>
+        
+      </table>
+    </details>
+    
+
+    <footer class="footer">
+      <span>&copy; 2026 goweb</span>
+      <span>Generated by <a href="https://github.com/manic/goweb">goweb</a></span>
+    </footer>
+  </div>
+</div>
+
+</body>
+</html>

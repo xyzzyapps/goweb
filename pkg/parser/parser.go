@@ -37,19 +37,27 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 			kind, literal := terminatorKind(line)
 			if kind == 1 {
 				// End of chunk definition.
-				chunk := &Chunk{
-					Name:        chunkDef.name,
-					Language:    chunkDef.language,
-					Body:        strings.Join(chunkDef.body, "\n"),
-					File:        chunkDef.file,
-					PipeCmd:     chunkDef.pipeCmd,
-					ExecCmd:     chunkDef.execCmd,
-					SessionName: chunkDef.sessionName,
-					Line:        chunkDef.startLine,
-					Source:      sourcePath,
-					Override:    chunkDef.override,
+			chunk := &Chunk{
+				Name:        chunkDef.name,
+				Language:    chunkDef.language,
+				Body:        strings.Join(chunkDef.body, "\n"),
+				File:        chunkDef.file,
+				PipeCmd:     chunkDef.pipeCmd,
+				ExecCmd:     chunkDef.execCmd,
+				SessionName: chunkDef.sessionName,
+				Line:        chunkDef.startLine,
+				Source:      sourcePath,
+				Override:    chunkDef.override,
+			}
+			if chunkDef.tags != "" {
+				for _, tag := range strings.Split(chunkDef.tags, ",") {
+					trimmed := strings.TrimSpace(tag)
+					if trimmed != "" {
+						chunk.Tags = append(chunk.Tags, trimmed)
+					}
 				}
-				chunks = addChunk(chunks, chunk)
+			}
+			chunks = addChunk(chunks, chunk)
 				chunkDef = nil
 			} else if kind >= 2 {
 				chunkDef.body = append(chunkDef.body, literal)
@@ -356,6 +364,19 @@ func extractChunksFromFence(fence *fencedBlock, sourcePath string) []*Chunk {
 					chunk.File = v
 				case "pipe":
 					chunk.PipeCmd = v
+				case "exec":
+					chunk.ExecCmd = v
+				case "session":
+					chunk.SessionName = v
+				case "tags":
+					for _, tag := range strings.Split(v, ",") {
+						trimmed := strings.TrimSpace(tag)
+						if trimmed != "" {
+							chunk.Tags = append(chunk.Tags, trimmed)
+						}
+					}
+				case "override":
+					chunk.Override = v == "true"
 				}
 			}
 

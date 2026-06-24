@@ -160,7 +160,9 @@ source.md
 
 ## Example
 
-See `examples/todo/` for a complete TODO app that demonstrates:
+### Go TODO App (`examples/todo/`)
+
+A CLI TODO app written in Go that demonstrates:
 - Chunk definitions with `file:` and `pipe:` attributes
 - Cross-file references via `<<import>>`
 - Debug mode toggling with `<<if debug>>`/`<<end>>`
@@ -173,6 +175,31 @@ goweb tangle --var debug=true main.md
 go build -o todo main.go
 ```
 
+### Preact + Bun + Tailwind TODO App (`examples/preact-todo/`)
+
+A frontend TODO app built with **Preact**, **Bun**, and **Tailwind CSS** that demonstrates:
+- `<<chunk>>=` definitions with `file:` → outputs to `src/*.tsx`, `package.json`, `index.html`, etc.
+- `<<import "file.md">>` — cross-file references across 4 source files
+- `<<if debug>>`/`<<end>>` — conditional console.log for debug mode
+- `tags:` — categorization (e.g., `tags: component`, `tags: config`, `tags: debug`)
+- `--var` — configurable `APP_NAME`, `AUTHOR`, and `debug` variables
+- `{{var}}` substitution — variables in `package.json`, `index.html`, LICENSE
+- `<<override>>` — replace components easily
+- Multiple sub-components (App, TodoList, TodoItem, AddTodo)
+- Tailwind CSS utility classes for responsive design
+
+```bash
+cd examples/preact-todo
+goweb tangle --var APP_NAME="My Todo" --var AUTHOR="You" main.md
+bun install
+bun run dev
+```
+
+Render the documentation to HTML:
+```bash
+goweb render main.md > preact-todo.html
+```
+
 ## Project Structure
 
 ```
@@ -183,7 +210,8 @@ pkg/preproc/preproc.go Preprocessor (imports, conditionals)
 pkg/graph/graph.go    Dependency graph, topological sort, resolver
 pkg/tangle/tangle.go  Tangle engine (reference expansion, pipes, file output)
 pkg/weave/weave.go    Weave (strip goweb syntax, clean markdown)
-examples/todo/        Complete TODO app example
+examples/todo/        Complete Go TODO app example
+examples/preact-todo/ Preact + Bun + Tailwind frontend TODO example
 ```
 
 ## License
