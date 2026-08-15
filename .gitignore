@@ -2,3 +2,6 @@ goweb.exe
 /goweb
 *.exe
 *.test
+TODO.md
+.todo/
+.todo

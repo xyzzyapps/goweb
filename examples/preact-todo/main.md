@@ -22,7 +22,7 @@ and build script is defined as a named chunk inside this markdown document.
 | `{{var}}` substitution | `{{APP_NAME}}`, `{{AUTHOR}}` placeholders in JSON, HTML, LICENSE |
 | Language inference | `.tsx` → TypeScript, `.css` → CSS, `.json` → JSON in rendered output |
 | `goweb tangle` | Extract all chunks into runnable source files |
-| `goweb render` | Generate full HTML documentation with RTD theme |
+| `goweb render` | Generate full HTML documentation with the light theme |
 | `goweb weave` | Produce clean markdown with fenced code blocks |
 | Chunk order independence | Handler functions defined after their usage in the render tree |
 | Cross-file chunk references | Components imported from `components.md`, config from `config.md` |
@@ -40,8 +40,8 @@ goweb tangle --var debug=true main.md
 bun install
 bun run dev
 
-# Generate HTML documentation with Read the Docs theme
-goweb render main.md --var debug=true --var APP_NAME="Todo App" --var AUTHOR="You" > todo.html
+# Generate HTML documentation with the light theme
+goweb render main.md --var debug=true --var APP_NAME="Todo App" --var AUTHOR="You" -o index.html
 ```
 
 ## How the chunks are organized

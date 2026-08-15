@@ -2,6 +2,8 @@
 
 **goweb** is a literate programming tool that brings noweb-style chunk syntax to GitHub Flavored Markdown. Write documentation and code in a single `.md` file, then **tangle** to extract source files, **weave** to generate clean markdown, or **sync** to apply edits back from the generated code.
 
+This codebase was written with **Grok**, **DeepSeek**, **Flask**, and **Gemini**. Later edits (spec, light theme, example, history cleanup, and GitHub Pages) were made by **Grok 4.6** (xAI). See [SPEC.md](SPEC.md) for the full language and architecture contract (for humans and agents).
+
 ## Features
 
 - **Noweb-style chunks** — `<<name>>=` defines a chunk, `>>` ends it
@@ -118,7 +120,7 @@ goweb tangle --pipe-dir ./scripts program.md
 ### Weave (generate documentation)
 
 ```bash
-# Output clean markdown to stdout
+# Output clean markdown to stdout (chunk bodies wrapped in fenced code blocks)
 goweb weave program.md
 
 # Write to file
@@ -127,6 +129,30 @@ goweb weave program.md -o README.md
 # With variables
 goweb weave --var debug=false program.md
 ```
+
+### Render (HTML documentation)
+
+```bash
+# Generate HTML with the built-in light documentation theme
+goweb render program.md > docs.html
+
+# With custom template
+goweb render program.md --template custom.tmpl > docs.html
+
+# With variables (expands {{var}} placeholders, controls <<if>> blocks)
+goweb render program.md --var APP_NAME="My App" --var debug=true > docs.html
+
+# Site mode — render a directory of .md files
+goweb render --site docs/ --output-dir site/
+```
+
+The default theme is a **light** documentation layout in the spirit of [lit-lang/lit](https://github.com/lit-lang/lit) / GitBook docs:
+- White page, light sidebar, system/Inter typography, blue accents
+- **highlight.js** GitHub (light) syntax highlighting only
+- Sidebar TOC, breadcrumbs, chunk index
+- SEO (Open Graph, Twitter, canonical) and AEO (JSON-LD, semantic article)
+- Code language auto-detected from `file:` extension (`.tsx` → TypeScript, `.css` → CSS, etc.)
+- Responsive layout with mobile sidebar toggle
 
 ## Architecture
 
@@ -154,28 +180,16 @@ source.md
           ├──► Tangle ──► output files
           │    (pkg/tangle)   (resolves refs, applies pipes)
           │
-          └──► Weave  ──► clean markdown
-               (pkg/weave)    (strips goweb syntax)
+          ├──► Weave  ──► clean markdown
+          │    (pkg/weave)    (strips goweb syntax, wraps code in fences)
+          │
+          └──► Render ──► HTML documentation
+               (cmd/goweb)     (light theme, syntax highlighting)
 ```
 
 ## Example
 
-### Go TODO App (`examples/todo/`)
-
-A CLI TODO app written in Go that demonstrates:
-- Chunk definitions with `file:` and `pipe:` attributes
-- Cross-file references via `<<import>>`
-- Debug mode toggling with `<<if debug>>`/`<<end>>`
-- Out-of-order chunk definitions
-- Multiple output files from a single source
-
-```bash
-cd examples/todo
-goweb tangle --var debug=true main.md
-go build -o todo main.go
-```
-
-### Preact + Bun + Tailwind TODO App (`examples/preact-todo/`)
+There is a **single** example: a Preact + Bun + Tailwind TODO app (`examples/preact-todo/`).
 
 A frontend TODO app built with **Preact**, **Bun**, and **Tailwind CSS** that demonstrates:
 - `<<chunk>>=` definitions with `file:` → outputs to `src/*.tsx`, `package.json`, `index.html`, etc.
@@ -190,28 +204,29 @@ A frontend TODO app built with **Preact**, **Bun**, and **Tailwind CSS** that de
 
 ```bash
 cd examples/preact-todo
-goweb tangle --var APP_NAME="My Todo" --var AUTHOR="You" main.md
+goweb tangle --var APP_NAME="My Todo" --var AUTHOR="You" --var debug=true main.md
 bun install
 bun run dev
 ```
 
-Render the documentation to HTML:
+Render the documentation to HTML with the light theme:
 ```bash
-goweb render main.md > preact-todo.html
+goweb render main.md --var APP_NAME="Todo App" --var AUTHOR="You" --var debug=true -o index.html
 ```
+
+The rendered HTML is published on GitHub Pages (`gh-pages`) with SEO and AEO metadata.
 
 ## Project Structure
 
 ```
-cmd/goweb/main.go     CLI entry point (cobra)
-pkg/parser/chunk.go   Chunk, Document data structures
-pkg/parser/parser.go  Markdown parser, chunk extraction
-pkg/preproc/preproc.go Preprocessor (imports, conditionals)
-pkg/graph/graph.go    Dependency graph, topological sort, resolver
-pkg/tangle/tangle.go  Tangle engine (reference expansion, pipes, file output)
-pkg/weave/weave.go    Weave (strip goweb syntax, clean markdown)
-examples/todo/        Complete Go TODO app example
-examples/preact-todo/ Preact + Bun + Tailwind frontend TODO example
+cmd/goweb/            CLI (cobra): tangle, weave, render, index, graph, reverse, sync, lsp, init
+pkg/parser/           Chunk, Document, markdown/noweb parser
+pkg/preproc/          Imports, conditionals, frontmatter
+pkg/graph/            Dependency graph, topological sort
+pkg/tangle/           Reference expansion, pipes, exec, file output
+pkg/weave/            Strip goweb syntax → clean markdown
+examples/preact-todo/ Single example (Preact + Bun + Tailwind)
+SPEC.md               Language and architecture spec (agents + humans)
 ```
 
 ## License
