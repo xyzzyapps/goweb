@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://xyzzyapps.github.io/goweb/sitemap.xml
