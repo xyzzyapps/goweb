@@ -30,6 +30,8 @@ form. The handwritten pages are still here beside it:
 
 **On this page:** [What you are looking at](#what-you-are-looking-at) · [What Preact is](#what-preact-is) · [How the app works](#how-the-app-works) · [Usage](#usage) · [Tags, graphs, and talking to a model](#tags-graphs-and-talking-to-a-model) · [License](#license)
 
+**Try it:** [open the todo app](index.html)
+
 **Elsewhere:** [the running app](index.html) · [this page as markdown](main.md) · [app.md](app.md) · [components.md](components.md) · [config.md](config.md) · [goweb on GitHub]({{REPO}}) · [Preact](https://preactjs.com/) · [htm](https://github.com/developit/htm) · [lit-lang.org](https://lit-lang.org/) · [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
 
 ## What you are looking at

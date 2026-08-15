@@ -158,8 +158,9 @@ footer h2 { color: var(--color-primary); background: none; margin: 0 0 0.5rem; }
   </a>
   <nav class="Nav" aria-label="Main navigation">
     <ul>
+      <li><a href="index.html">App</a></li>
       <li><a href="{{if .Repo}}{{.Repo}}{{else}}#{{end}}">Source</a></li>
-      <li><a href="#chunks">Documentation</a></li>
+      <li><a href="#chunks">Chunks</a></li>
     </ul>
   </nav>
 </header>
