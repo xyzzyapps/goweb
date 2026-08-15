@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/manic/goweb/pkg/parser"
+	"github.com/xyzzyapps/goweb/pkg/parser"
 )
 
 // Graph represents a chunk dependency graph.

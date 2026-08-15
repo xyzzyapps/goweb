@@ -1,17 +1,20 @@
-# App Component
+# The page you actually use
 
-The App component is the main entry point of the Preact application.
-It manages global state (the todo list and active filter) using Preact's `useState` hook,
-and orchestrates the three sub-components imported from `components.md`:
-`AddTodo`, `TodoList`, and `TodoItem`.
+This chapter is the app's front door. <<app-js>> is the room: it remembers
+the list and the current filter, and it asks the smaller pieces — add, row,
+list — to draw themselves. <<main-js>> only does one job: find the empty
+`<div id="app">` in <<index-html>> and place that room inside it.
+
+If you have used a notebook, this file is the cell that *owns the variables*.
+The hooks below are those variables. The markup below is the output.
 
 ## Chunks in this file
 
 This file exports these files when tangled:
 
-- `src/style.css` — Tailwind CSS directives for base styling
-- `src/main.tsx` — Mounts the `<App />` component to the DOM
-- `src/app.tsx` — The full App component with state management and filter UI
+- `src/style.css` — lit-lang.org-inspired styles
+- `src/main.js` — Mounts the `App` component (browser ES module)
+- `src/app.js` — The full App component with state management and filter UI
 
 ## Goweb features shown
 
@@ -26,110 +29,224 @@ so definition order doesn't matter.
 with `--var debug=true`, these chunks are included. When `debug` is not set, they are stripped.
 This lets you maintain debug code alongside production code without runtime overhead.
 
-**Cross-file references.** The `app.tsx` chunk imports from `./components/add-todo`,
-`./components/todo-list`, and `./components/todo-item`. These components are defined
-in `components.md` and imported via `<<import "components.md">>>` in `main.md`.
+**Cross-file references.** The `app.js` chunk imports from `./components/add-todo.js`,
+`./components/todo-list.js`, and `./components/todo-item.js`. These components are defined
+in `components.md` and imported via `<<import "components.md">>` in `main.md`.
 
 **Chunk references for stubs.** The `app-todo-ul` reference is left as a placeholder
 inside the JSX. During tangling, any chunk named `<<app-todo-ul>>` (defined elsewhere)
 will be substituted in its place. This is useful for out-of-order definition.
 
 <<style-css>>= file: src/style.css tags: component
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Palette and chrome match https://lit-lang.org/ */
+:root {
+  --color-primary: #ffcd42;
+  --color-primary-light: rgba(255, 205, 66, 0.12);
+  --color-primary-darker: #291f04;
+  --color-primary-text: #333;
+  --gradient-primary: linear-gradient(to right, #ffcd42, #ff6102);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
 
 body {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--color-primary-text);
+  background: #fff;
 }
+
+.site-header {
+  padding: 1rem 1rem 0.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.site-brand {
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.view-source, .github-link {
+  font-weight: 600;
+  color: #000;
+  text-decoration: underline;
+  padding: 0.4rem 0.85rem;
+  border: 2px solid #000;
+  background: var(--color-primary);
+  box-shadow: 3px 3px 0 #000;
+}
+
+.github-link { background: #fff; }
+
+.view-source:hover, .github-link:hover { text-decoration: none; }
+
+.todo-app {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem 1rem 3rem;
+}
+
+.todo-app h1 {
+  margin: 0 0 1.25rem;
+  padding-bottom: 0.5rem;
+  background: linear-gradient(transparent, transparent) no-repeat 0 0,
+    var(--gradient-primary) no-repeat 0 calc(100% - 0.5px) / 100% 2px;
+}
+
+.todo-form { display: flex; gap: 0.5rem; }
+
+.todo-input, .todo-btn, .filter-btn, .todo-delete {
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.todo-input {
+  flex: 1;
+  padding: 0.55rem 0.75rem;
+  border: 2px solid #000;
+  background: #fff;
+  box-shadow: 3px 3px 0 #000;
+}
+
+.todo-btn, .filter-btn {
+  padding: 0.55rem 0.9rem;
+  border: 2px solid #000;
+  background: var(--color-primary);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 #000;
+}
+
+.filter-btn.is-active {
+  background: #ff6102;
+  color: #fff;
+}
+
+.filters { display: flex; gap: 0.5rem; margin: 1rem 0; flex-wrap: wrap; }
+
+.todo-list { list-style: none; padding: 0; margin: 0; }
+
+.todo-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  margin-bottom: 0.6rem;
+  border: 2px solid #000;
+  background: var(--color-primary-light);
+  box-shadow: 3px 3px 0 #000;
+}
+
+.todo-title.is-done { text-decoration: line-through; opacity: 0.55; }
+.todo-title { flex: 1; }
+
+.todo-delete {
+  border: 2px solid #000;
+  background: #fff;
+  cursor: pointer;
+  padding: 0.15rem 0.5rem;
+  font-weight: 700;
+}
+
+.todo-empty, .todo-count { text-align: center; color: #666; margin-top: 1rem; }
+
+.site-footer {
+  background: var(--color-primary-darker);
+  color: #fff;
+  text-align: center;
+  padding: 1.5rem 1rem;
+  font-size: 0.9rem;
+}
+.site-footer a { color: var(--color-primary); font-weight: 600; }
 >>
 
-<<main-tsx>>= file: src/main.tsx tags: component
+<<main-js>>= file: src/main.js tags: component
 import { render } from "preact";
-import { App } from "./app";
-import "./style.css";
+import { html } from "htm/preact";
+import { App } from "./app.js";
 
 const root = document.getElementById("app");
 if (root) {
-  render(<App />, root);
+  render(html`<${App} />`, root);
 }
 >>
 
-<<app-tsx>>= file: src/app.tsx tags: component
+<<app-js>>= file: src/app.js tags: component
 import { useState } from "preact/hooks";
-import { AddTodo } from "./components/add-todo";
-import { TodoList } from "./components/todo-list";
-import { TodoItem } from "./components/todo-item";
-
-interface Todo {
-  id: number;
-  title: string;
-  done: boolean;
-}
+import { html } from "htm/preact";
+import { AddTodo } from "./components/add-todo.js";
+import { TodoItem } from "./components/todo-item.js";
 
 export function App() {
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [filter, setFilter] = useState<"all" | "active" | "done">("all");
+  const [todos, setTodos] = useState([]);
+  const [filter, setFilter] = useState("all");
 
   <<app-add-todo>>
   <<app-toggle-todo>>
   <<app-delete-todo>>
   <<app-filter-todos>>
 
-  return (
-    <div class="max-w-lg mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg">
-      <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">
-        {{APP_NAME}}
-      </h1>
-
-      <AddTodo onAdd={handleAdd} />
-
-      <div class="flex gap-2 my-4">
+  return html`
+    <header class="site-header">
+      <a class="site-brand" href="#">goweb</a>
+      <nav class="site-nav">
+        <a class="view-source" href="docs.html">View source</a>
+        <a class="github-link" href="{{REPO}}">GitHub</a>
+      </nav>
+    </header>
+    <div class="todo-app">
+      <h1>{{APP_NAME}}</h1>
+      <${AddTodo} onAdd=${handleAdd} />
+      <div class="filters">
         <button
-          onClick={() => setFilter("all")}
-          class={"px-3 py-1 rounded-full text-sm " +
-            (filter === "all"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200 text-gray-700")
-          }
+          onClick=${() => setFilter("all")}
+          class=${"filter-btn" + (filter === "all" ? " is-active" : "")}
         >
           All
         </button>
         <button
-          onClick={() => setFilter("active")}
-          class={"px-3 py-1 rounded-full text-sm " +
-            (filter === "active"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200 text-gray-700")
-          }
+          onClick=${() => setFilter("active")}
+          class=${"filter-btn" + (filter === "active" ? " is-active" : "")}
         >
           Active
         </button>
         <button
-          onClick={() => setFilter("done")}
-          class={"px-3 py-1 rounded-full text-sm " +
-            (filter === "done"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200 text-gray-700")
-          }
+          onClick=${() => setFilter("done")}
+          class=${"filter-btn" + (filter === "done" ? " is-active" : "")}
         >
           Done
         </button>
       </div>
-
       <<app-todo-ul>>
-
-      <div class="mt-4 text-sm text-gray-500 text-center">
-        {todos.length} item{todos.length !== 1 ? "s" : ""} total
+      <div class="todo-count">
+        ${todos.length} item${todos.length !== 1 ? "s" : ""} total
       </div>
     </div>
-  );
+  `;
 }
 >>
 
 <<app-add-todo>>=
-function handleAdd(title: string) {
-  const newTodo: Todo = {
+function handleAdd(title) {
+  const newTodo = {
     id: Date.now(),
     title,
     done: false,
@@ -140,7 +257,7 @@ function handleAdd(title: string) {
 >>
 
 <<app-toggle-todo>>=
-function handleToggle(id: number) {
+function handleToggle(id) {
   setTodos((prev) =>
     prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
   );
@@ -149,7 +266,7 @@ function handleToggle(id: number) {
 >>
 
 <<app-delete-todo>>=
-function handleDelete(id: number) {
+function handleDelete(id) {
   setTodos((prev) => prev.filter((t) => t.id !== id));
   <<debug-log-delete>>
 }
@@ -164,34 +281,32 @@ const filtered = todos.filter((t) => {
 >>
 
 <<app-todo-ul>>=
-<ul class="space-y-2">
-  {filtered.map((todo) => (
-    <li key={todo.id}>
-      <TodoItem
-        todo={todo}
-        onToggle={handleToggle}
-        onDelete={handleDelete}
+<ul class="todo-list">
+  ${filtered.map((todo) => html`
+    <li key=${todo.id}>
+      <${TodoItem}
+        todo=${todo}
+        onToggle=${handleToggle}
+        onDelete=${handleDelete}
       />
     </li>
-  ))}
-  {filtered.length === 0 && (
-    <li class="text-gray-400 text-center py-4">
-      No todos yet. Add one above!
-    </li>
-  )}
+  `)}
+  ${filtered.length === 0 && html`
+    <li class="todo-empty">No todos yet. Add one above!</li>
+  `}
 </ul>
 >>
 
 <<if debug>>
-<<debug-log-add>>=
+<<debug-log-add>>= tags: debug
 console.log("[debug] added todo:", title);
 >>
 
-<<debug-log-toggle>>=
+<<debug-log-toggle>>= tags: debug
 console.log("[debug] toggled todo:", id);
 >>
 
-<<debug-log-delete>>=
+<<debug-log-delete>>= tags: debug
 console.log("[debug] deleted todo:", id);
 >>
 <<end>>

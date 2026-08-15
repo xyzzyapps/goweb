@@ -14,9 +14,9 @@ import (
 	gparser "github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
 
-	goparser "github.com/manic/goweb/pkg/parser"
-	"github.com/manic/goweb/pkg/preproc"
-	"github.com/manic/goweb/pkg/weave"
+	goparser "github.com/xyzzyapps/goweb/pkg/parser"
+	"github.com/xyzzyapps/goweb/pkg/preproc"
+	"github.com/xyzzyapps/goweb/pkg/weave"
 )
 
 // PageData is the template context passed to HTML templates.
@@ -26,6 +26,10 @@ type PageData struct {
 	Source   string
 	Chunks   []ChunkInfo
 	Headings []Heading
+	Author   string
+	Email    string
+	Repo     string
+	Pages    string
 }
 
 // ChunkInfo holds metadata about a chunk for templates.
@@ -35,6 +39,7 @@ type ChunkInfo struct {
 	File     string
 	Tags     []string
 	Line     int
+	ID       string
 }
 
 // Heading holds a single heading entry extracted from markdown content.
@@ -138,6 +143,10 @@ func renderFile(sourcePath, tmplPath, outputPath string, vars map[string]string)
 		Source:   sourcePath,
 		Chunks:   chunks,
 		Headings: headings,
+		Author:   vars["AUTHOR"],
+		Email:    vars["EMAIL"],
+		Repo:     vars["REPO"],
+		Pages:    pagesURL(vars["REPO"]),
 	}
 
 	// Render through template or output raw HTML.
@@ -232,6 +241,10 @@ func renderSite(siteDir, tmplPath string, vars map[string]string) error {
 				Source:   page.Source,
 				Chunks:   page.Chunks,
 				Headings: page.Headings,
+				Author:   vars["AUTHOR"],
+				Email:    vars["EMAIL"],
+				Repo:     vars["REPO"],
+				Pages:    pagesURL(vars["REPO"]),
 			})
 		} else {
 			var out bytes.Buffer
@@ -429,6 +442,7 @@ func extractChunkInfo(sourcePath string, vars map[string]string) []ChunkInfo {
 			File:     c.File,
 			Tags:     c.Tags,
 			Line:     c.Line,
+			ID:       goparser.ChunkAnchor(c.Name),
 		})
 	}
 	return info

@@ -22,12 +22,17 @@ func TestStripControlSyntax(t *testing.T) {
 		{
 			name:  "chunk def wrapped in fences",
 			lines: []string{"<<main>>=", "body", ">>"},
-			want:  "```\nbody\n```",
+			want:  "<a id=\"chunk-main\"></a>\n**<a href=\"#chunk-main\"><code>&lt;&lt;main&gt;&gt;</code></a>**\n```\nbody\n```",
 		},
 		{
-			name:  "references unwrapped",
-			lines: []string{"<<ref>>"},
-			want:  "ref",
+			name:  "prose references become links",
+			lines: []string{"see <<ref>>"},
+			want:  "see <a href=\"#chunk-ref\"><code>&lt;&lt;ref&gt;&gt;</code></a>",
+		},
+		{
+			name:  "override directive is not a chunk link",
+			lines: []string{"use `<<override>>` before the definition"},
+			want:  "use `<<override>>` before the definition",
 		},
 		{
 			name:  "directives removed",
@@ -37,12 +42,12 @@ func TestStripControlSyntax(t *testing.T) {
 		{
 			name: "chunk def with file: attribute sets language",
 			lines: []string{"<<main>>= file: main.go", "package main", ">>"},
-			want:  "```go\npackage main\n```",
+			want:  "<a id=\"chunk-main\"></a>\n**<a href=\"#chunk-main\"><code>&lt;&lt;main&gt;&gt;</code></a>** · `main.go`\n```go\npackage main\n```",
 		},
 		{
 			name: "chunk def with tsx file attribute",
 			lines: []string{"<<comp>>= file: src/app.tsx tags: component", "import { h } from 'preact'", ">>"},
-			want:  "```tsx\nimport { h } from 'preact'\n```",
+			want:  "<a id=\"chunk-comp\"></a>\n**<a href=\"#chunk-comp\"><code>&lt;&lt;comp&gt;&gt;</code></a>** · `src/app.tsx`\n```tsx\nimport { h } from 'preact'\n```",
 		},
 		{
 			name: "nested defs inside fenced block preserved",
@@ -53,6 +58,11 @@ func TestStripControlSyntax(t *testing.T) {
 			name: "fenced block with language preserved",
 			lines: []string{"```go", "func main() {}", "```"},
 			want:  "```go\nfunc main() {}\n```",
+		},
+		{
+			name: "chunk body refs listed as uses",
+			lines: []string{"<<app>>=", "x = <<helper>>", ">>"},
+			want:  "<a id=\"chunk-app\"></a>\n**<a href=\"#chunk-app\"><code>&lt;&lt;app&gt;&gt;</code></a>**\n```\nx = helper\n```\nUses <a href=\"#chunk-helper\"><code>&lt;&lt;helper&gt;&gt;</code></a>.",
 		},
 	}
 

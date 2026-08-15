@@ -1,18 +1,22 @@
-# UI Components
+# The small pieces of the screen
 
-This file defines three reusable Preact components for the TODO app.
-Each component is a named chunk with a `file:` attribute that determines
-the output path during tangling.
+A todo app is three gestures: write something, look at the list, mark or
+discard a line. Each gesture is a component — a function that takes a few
+props and returns HTML. They live here so <<app-js>> can stay a story about
+*state*, not about every button.
+
+You do not need to know Preact deeply to read them. A component is “given
+these values, draw this.” When a value changes, Preact draws again.
 
 ## Components
 
-- **`AddTodo`** (`src/components/add-todo.tsx`) — Controlled form with input and submit button. Uses `useState` for local input state. The form prevents default submission and calls the parent's `onAdd` callback.
-- **`TodoList`** (`src/components/todo-list.tsx`) — Standalone list component that maps over todos. Accepts `todos`, `onToggle`, and `onDelete` props. Tagged with `override-demo` to demonstrate goweb's chunk override feature.
-- **`TodoItem`** (`src/components/todo-item.tsx`) — Single todo row with checkbox, title, and delete button. Uses Tailwind hover groups to show the delete button on hover, with strikethrough styling for completed items.
+- **`AddTodo`** (`src/components/add-todo.js`) — Controlled form with input and submit button. Uses `useState` for local input state. The form prevents default submission and calls the parent's `onAdd` callback.
+- **`TodoList`** (`src/components/todo-list.js`) — Standalone list component that maps over todos. Accepts `todos`, `onToggle`, and `onDelete` props. Tagged with `override-demo` to demonstrate goweb's chunk override feature.
+- **`TodoItem`** (`src/components/todo-item.js`) — Single todo row with checkbox, title, and delete button. Completed items use strikethrough styling.
 
 ## Goweb features shown
 
-**The `file:` attribute.** Each chunk definition includes `file: src/components/add-todo.tsx`,
+**The `file:` attribute.** Each chunk definition includes `file: src/components/add-todo.js`,
 which tells goweb where to write the tangled output. The path is relative to the current
 working directory where `goweb tangle` is invoked.
 
@@ -26,35 +30,30 @@ name and use `<<override>>` before the definition:
 
 ```
 <<override>>
-<<todo-list-component>>= file: src/components/todo-list.tsx
-// Custom implementation here
+<<todo-list-component>>= file: src/components/todo-list.js
+export function TodoList() { return null; }
 >>
 ```
 
 The override takes precedence during tangling, making this a powerful mechanism
 for swapping implementations without modifying original source files.
 
-**Cross-file chunk resolution.** These components are imported by `app.tsx` (defined in `app.md`)
+**Cross-file chunk resolution.** These components are imported by `app.js` (defined in `app.md`)
 even though they are defined in this file. Goweb resolves all chunks across imported files
 during tangling, so the import order in `main.md` (`<<import "app.md">>`, `<<import "components.md">>`)
 ensures all chunks are available.
 
-**No language tag needed.** The `AddTodo` and `TodoList` chunks use TypeScript/TSX syntax
-but don't include a language annotation in their fenced code block. Goweb's render step
-infers the language from the `file:` extension (`.tsx` → TypeScript), so the rendered
-HTML documentation gets proper syntax highlighting via highlight.js.
+Tangled output is browser ES modules (`.js` + `htm`) so a static server can serve them
+as `text/javascript`. JSX/TSX cannot run that way.
 
-<<add-todo-component>>= file: src/components/add-todo.tsx tags: component
+<<add-todo-component>>= file: src/components/add-todo.js tags: component
 import { useState } from "preact/hooks";
+import { html } from "htm/preact";
 
-interface AddTodoProps {
-  onAdd: (title: string) => void;
-}
-
-export function AddTodo({ onAdd }: AddTodoProps) {
+export function AddTodo({ onAdd }) {
   const [value, setValue] = useState("");
 
-  function handleSubmit(e: Event) {
+  function handleSubmit(e) {
     e.preventDefault();
     const trimmed = value.trim();
     if (trimmed === "") return;
@@ -62,98 +61,64 @@ export function AddTodo({ onAdd }: AddTodoProps) {
     setValue("");
   }
 
-  return (
-    <form onSubmit={handleSubmit} class="flex gap-2">
+  return html`
+    <form onSubmit=${handleSubmit} class="todo-form">
       <input
         type="text"
-        value={value}
-        onInput={(e) => setValue((e.target as HTMLInputElement).value)}
+        value=${value}
+        onInput=${(e) => setValue(e.target.value)}
         placeholder="What needs to be done?"
-        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+        class="todo-input"
       />
-      <button
-        type="submit"
-        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-      >
-        Add
-      </button>
+      <button type="submit" class="todo-btn">Add</button>
     </form>
-  );
+  `;
 }
 >>
 
-<<todo-list-component>>= file: src/components/todo-list.tsx tags: component, override-demo
-// This component is imported by app.tsx inline via Array.map.
-// It exists as a standalone export for potential reuse.
-import type { JSX } from "preact";
+<<todo-list-component>>= file: src/components/todo-list.js tags: component, override-demo
+import { html } from "htm/preact";
+import { TodoItem } from "./todo-item.js";
 
-interface Todo {
-  id: number;
-  title: string;
-  done: boolean;
-}
-
-interface TodoListProps {
-  todos: Todo[];
-  onToggle: (id: number) => void;
-  onDelete: (id: number) => void;
-}
-
-// In a more complex app this would handle virtualization or grouping.
-export function TodoList({ todos, onToggle, onDelete }: TodoListProps) {
-  return (
-    <ul class="space-y-2">
-      {todos.map((todo) => (
-        <li key={todo.id}>
-          <TodoItem
-            todo={todo}
-            onToggle={onToggle}
-            onDelete={onDelete}
+export function TodoList({ todos, onToggle, onDelete }) {
+  return html`
+    <ul class="todo-list">
+      ${todos.map((todo) => html`
+        <li key=${todo.id}>
+          <${TodoItem}
+            todo=${todo}
+            onToggle=${onToggle}
+            onDelete=${onDelete}
           />
         </li>
-      ))}
+      `)}
     </ul>
-  );
+  `;
 }
 >>
 
-<<todo-item-component>>= file: src/components/todo-item.tsx tags: component
-import type { JSX } from "preact";
+<<todo-item-component>>= file: src/components/todo-item.js tags: component
+import { html } from "htm/preact";
 
-interface Todo {
-  id: number;
-  title: string;
-  done: boolean;
-}
-
-interface TodoItemProps {
-  todo: Todo;
-  onToggle: (id: number) => void;
-  onDelete: (id: number) => void;
-}
-
-export function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
-  return (
-    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
+export function TodoItem({ todo, onToggle, onDelete }) {
+  return html`
+    <div class="todo-row">
       <input
         type="checkbox"
-        checked={todo.done}
-        onClick={() => onToggle(todo.id)}
-        class="w-5 h-5 text-blue-500 rounded focus:ring-blue-400 cursor-pointer"
+        checked=${todo.done}
+        onClick=${() => onToggle(todo.id)}
       />
-      <span
-        class={"flex-1 " + (todo.done ? "line-through text-gray-400" : "text-gray-800")}
-      >
-        {todo.title}
+      <span class=${"todo-title" + (todo.done ? " is-done" : "")}>
+        ${todo.title}
       </span>
       <button
-        onClick={() => onDelete(todo.id)}
-        class="opacity-0 group-hover:opacity-100 px-2 py-1 text-sm text-red-500 hover:bg-red-100 rounded transition-all"
+        onClick=${() => onDelete(todo.id)}
+        class="todo-delete"
         aria-label="Delete"
       >
         ✕
       </button>
     </div>
-  );
+  `;
 }
 >>

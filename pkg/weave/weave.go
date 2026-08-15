@@ -10,7 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/manic/goweb/pkg/preproc"
+	"github.com/xyzzyapps/goweb/pkg/parser"
+	"github.com/xyzzyapps/goweb/pkg/preproc"
 )
 
 // Weave generates clean markdown from a goweb source file.
@@ -61,6 +62,7 @@ func stripControlSyntax(lines []string) []string {
 	fenceChar := ""
 	inChunkBody := false // chunk def body outside markdown fences
 	chunkFenceChar := "```"
+	var bodyRefs []string
 
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
@@ -105,6 +107,10 @@ func stripControlSyntax(lines []string) []string {
 			// Strip chunk definition terminators (>> on its own line).
 			if trimmed == ">>" {
 				out = append(out, chunkFenceChar)
+				if uses := formatUses(bodyRefs); uses != "" {
+					out = append(out, uses)
+				}
+				bodyRefs = nil
 				inChunkBody = false
 				continue
 			}
@@ -113,6 +119,7 @@ func stripControlSyntax(lines []string) []string {
 				continue
 			}
 			// Remove any remaining <<ref>> references.
+			bodyRefs = appendRefs(bodyRefs, line)
 			cleaned := removeAngleBrackets(line)
 			out = append(out, cleaned)
 		} else {
@@ -127,6 +134,10 @@ func stripControlSyntax(lines []string) []string {
 			}
 			// Handle chunk definition start — wrap body in fenced code block.
 			if isChunkDefStart(trimmed) {
+				name := chunkNameFromDef(trimmed)
+				file := fileFromChunkDef(trimmed)
+				id := parser.ChunkAnchor(name)
+				out = append(out, chunkHeading(name, file, id))
 				lang := langFromChunkDef(trimmed)
 				if lang != "" {
 					out = append(out, chunkFenceChar+lang)
@@ -134,10 +145,11 @@ func stripControlSyntax(lines []string) []string {
 					out = append(out, chunkFenceChar)
 				}
 				inChunkBody = true
+				bodyRefs = nil
 				continue
 			}
-			// Also clean any inline <<...>> that might remain.
-			cleaned := removeAngleBrackets(line)
+			// Prose: turn <<chunk>> into in-document links.
+			cleaned := linkifyRefs(line)
 			out = append(out, cleaned)
 		}
 	}
@@ -145,6 +157,9 @@ func stripControlSyntax(lines []string) []string {
 	// Close any unclosed chunk body at EOF.
 	if inChunkBody {
 		out = append(out, chunkFenceChar)
+		if uses := formatUses(bodyRefs); uses != "" {
+			out = append(out, uses)
+		}
 	}
 
 	return out
@@ -284,13 +299,146 @@ func isChunkDefStart(trimmed string) bool {
 	return strings.HasPrefix(trimmed, "<<") && strings.Contains(trimmed, ">>=")
 }
 
+func chunkNameFromDef(trimmed string) string {
+	s := strings.TrimPrefix(strings.TrimSpace(trimmed), "<<")
+	i := strings.Index(s, ">>=")
+	if i < 0 {
+		return ""
+	}
+	return strings.TrimSpace(s[:i])
+}
+
+func fileFromChunkDef(line string) string {
+	idx := strings.Index(line, "file:")
+	if idx < 0 {
+		return ""
+	}
+	fileVal := strings.TrimSpace(line[idx+5:])
+	end := strings.IndexAny(fileVal, " \t,")
+	if end >= 0 {
+		fileVal = fileVal[:end]
+	}
+	return fileVal
+}
+
+func appendRefs(refs []string, line string) []string {
+	seen := map[string]bool{}
+	for _, r := range refs {
+		seen[r] = true
+	}
+	i := 0
+	for i < len(line) {
+		start := strings.Index(line[i:], "<<")
+		if start == -1 {
+			break
+		}
+		start += i
+		end := strings.Index(line[start+2:], ">>")
+		if end == -1 {
+			break
+		}
+		end += start + 2
+		if end+2 < len(line) && line[end+2] == '=' {
+			i = end + 3
+			continue
+		}
+		name := strings.TrimSpace(line[start+2 : end])
+		if name != "" && !isReservedRef(name) && !seen[name] {
+			seen[name] = true
+			refs = append(refs, name)
+		}
+		i = end + 2
+	}
+	return refs
+}
+
+func formatUses(refs []string) string {
+	if len(refs) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(refs))
+	for _, name := range refs {
+		parts = append(parts, chunkLink(name))
+	}
+	return "Uses " + strings.Join(parts, ", ") + "."
+}
+
+func chunkLink(name string) string {
+	return fmt.Sprintf(`<a href="#%s"><code>&lt;&lt;%s&gt;&gt;</code></a>`, parser.ChunkAnchor(name), name)
+}
+
+func chunkHeading(name, file, id string) string {
+	head := fmt.Sprintf("<a id=\"%s\"></a>\n**%s**", id, chunkLink(name))
+	if file != "" {
+		return head + " · `" + file + "`"
+	}
+	return head
+}
+
+// linkifyRefs turns prose <<name>> references into markdown links to the chunk anchor.
+func linkifyRefs(line string) string {
+	var result strings.Builder
+	i := 0
+	for i < len(line) {
+		start := strings.Index(line[i:], "<<")
+		if start == -1 {
+			result.WriteString(line[i:])
+			break
+		}
+		start += i
+		result.WriteString(line[i:start])
+		end := strings.Index(line[start+2:], ">>")
+		if end == -1 {
+			result.WriteString(line[start:])
+			break
+		}
+		end += start + 2
+		if end+2 < len(line) && line[end+2] == '=' {
+			i = end + 3
+			continue
+		}
+		inner := strings.TrimSpace(line[start+2 : end])
+		if inner == "" || isReservedRef(inner) {
+			result.WriteString(line[start : end+2])
+			i = end + 2
+			continue
+		}
+		// Already in a markdown code span — leave the raw <<name>>.
+		if inBackticks(line, start) {
+			result.WriteString(line[start : end+2])
+			i = end + 2
+			continue
+		}
+		result.WriteString(chunkLink(inner))
+		i = end + 2
+	}
+	return result.String()
+}
+
+func isReservedRef(inner string) bool {
+	switch inner {
+	case "else", "end", "override", "__goweb_override__":
+		return true
+	}
+	return strings.HasPrefix(inner, "if ") ||
+		strings.HasPrefix(inner, "elif ") ||
+		strings.HasPrefix(inner, "import") ||
+		strings.HasPrefix(inner, "override")
+}
+
+func inBackticks(line string, pos int) bool {
+	n := strings.Count(line[:pos], "`")
+	return n%2 == 1
+}
+
 // isGowebDirective checks if a trimmed line is a goweb control directive.
 func isGowebDirective(trimmed string) bool {
 	return strings.HasPrefix(trimmed, "<<if ") ||
 		strings.HasPrefix(trimmed, "<<elif ") ||
 		trimmed == "<<else>>" ||
 		trimmed == "<<end>>" ||
-		strings.HasPrefix(trimmed, "<<import")
+		strings.HasPrefix(trimmed, "<<import") ||
+		strings.HasPrefix(trimmed, "<<override")
 }
 
 // removeAngleBrackets removes or neutralizes <<...>> sequences from a line.
@@ -324,8 +472,9 @@ func removeAngleBrackets(line string) string {
 			continue
 		}
 
-		// If inner is non-empty, it's a reference — keep the inner text.
-		if inner != "" {
+		if isReservedRef(inner) {
+			result.WriteString("<<" + inner + ">>")
+		} else if inner != "" {
 			result.WriteString(inner)
 		}
 		i = end + 2

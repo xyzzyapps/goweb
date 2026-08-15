@@ -4,7 +4,7 @@
 
 goweb lets you write documentation and code in `.md` files, then tangle source, weave clean markdown, or render HTML.
 
-Written with Grok, DeepSeek, Flask, and Gemini. Later work by Grok 4.6 (xAI).
+Written with DeepSeek and Grok 4.6 (xAI).
 
 ## Links
 
@@ -17,14 +17,17 @@ Written with Grok, DeepSeek, Flask, and Gemini. Later work by Grok 4.6 (xAI).
 
 - `goweb tangle` — extract code chunks
 - `goweb weave` — clean markdown
-- `goweb render` — HTML (light theme)
-- `goweb sync` — apply tangled edits back to `.md`
-- `goweb index` / `goweb graph` / `goweb reverse` / `goweb init` / `goweb lsp`
+- `goweb render` — HTML (lit-lang.org palette, no underlines)
+- `goweb index` / `goweb graph` — chunk map (use as LLM context before dumping files)
+- `goweb tangle --match tag` — one tag shelf
+- `goweb sync` / `goweb reverse` / `goweb init` / `goweb lsp`
+
+License: CC BY-SA 4.0.
 
 ## Syntax (brief)
 
-- `<<name>>=` … `>>` defines a chunk
-- `<<name>>` references a chunk
-- `<<import "file.md">>` / `<<override "file.md">>`
+- `<<name>>=` … `>>` defines a chunk (`file:`, `pipe:`, `exec:`, `session:`, `tags:`, `override`)
+- `<<name>>` references a chunk (weave/render: in-document link)
+- `<<import "file.md">>` / `<<override "file.md">>` — `<<override>>` is not a chunk
 - `<<if var>>` / `<<elif>>` / `<<else>>` / `<<end>>`
-- `{{var}}` substitution; `--var key=value`
+- `{{var}}`; `--var`; unset AUTHOR/EMAIL/REPO from git config

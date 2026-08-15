@@ -10,10 +10,10 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/cobra"
 
-	"github.com/manic/goweb/pkg/parser"
-	"github.com/manic/goweb/pkg/preproc"
-	"github.com/manic/goweb/pkg/tangle"
-	"github.com/manic/goweb/pkg/weave"
+	"github.com/xyzzyapps/goweb/pkg/parser"
+	"github.com/xyzzyapps/goweb/pkg/preproc"
+	"github.com/xyzzyapps/goweb/pkg/tangle"
+	"github.com/xyzzyapps/goweb/pkg/weave"
 )
 
 var (
@@ -261,5 +261,6 @@ func parseVars(flags []string) map[string]string {
 			vars[parts[0]] = "true"
 		}
 	}
+	applyGitConfigDefaults(vars)
 	return vars
 }

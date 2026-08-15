@@ -5,7 +5,26 @@ package parser
 import (
 	"fmt"
 	"sort"
+	"strings"
+	"unicode"
 )
+
+// ChunkAnchor is the HTML id used so weaved/rendered docs can link to a chunk.
+func ChunkAnchor(name string) string {
+	var b strings.Builder
+	b.WriteString("chunk-")
+	for _, r := range strings.TrimSpace(name) {
+		switch {
+		case unicode.IsLetter(r) || unicode.IsDigit(r):
+			b.WriteRune(unicode.ToLower(r))
+		case r == '-' || r == '_':
+			b.WriteRune(r)
+		default:
+			b.WriteByte('-')
+		}
+	}
+	return b.String()
+}
 
 // Chunk represents a named code chunk in a literate program.
 // Chunks are defined via <<name>>= ... >> syntax inside fenced code blocks.

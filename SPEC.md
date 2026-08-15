@@ -2,7 +2,7 @@
 
 This document is the source of truth for **humans and agents** working on goweb. It describes the language, pipeline, packages, CLI, examples, and invariants. Prefer this file over comments or chat history when behavior is unclear.
 
-**Authorship.** The original implementation was written with **Grok**, **DeepSeek**, **Flask**, and **Gemini**. Subsequent work in this tree (this spec, theme, docs, history cleanup, and publishing) was done by **Grok 4.6** (xAI).
+**Authorship.** This codebase was written with **DeepSeek** and **Grok 4.6** (xAI).
 
 ---
 
@@ -22,7 +22,7 @@ goweb is a noweb-style literate programming tool on GitHub Flavored Markdown. A 
 | `init` | Scaffold `program.md` |
 | `lsp` | JSON-RPC language server over stdin/stdout |
 
-Module path: `github.com/manic/goweb`. Go version: see `go.mod`.
+Module path: `github.com/xyzzyapps/goweb`. Go version: see `go.mod`.
 
 ---
 
@@ -100,9 +100,23 @@ Expressions:
 
 Variables come from `--var key=value` (bare `--var debug` ⇒ `"true"`). Nested conditionals are supported; skipped parents skip children.
 
+When unset, the CLI fills `AUTHOR` from `git config user.name`, `EMAIL` from `user.email`, and `REPO` from `remote.origin.url` (https, `.git` stripped). Explicit `--var` values are not overwritten.
+
 ### 2.6 Inline variables
 
 `{{NAME}}` is substituted from the same var map during tangle (graph resolver) and render (markdown pass). Unknown placeholders stay as-is.
+
+### 2.7 Reserved `<<…>>` names
+
+These are **not** chunk references. Weave leaves them as literal `<<name>>` (and does not emit `#chunk-…` links):
+
+`if`, `elif`, `else`, `end`, `import`, `override`, `__goweb_override__` (and `import …` / `override …` with a path).
+
+`<<name>>` already inside markdown backticks is left alone so `` `<<override>>` `` stays a code span.
+
+### 2.8 Weave / render cross-references
+
+In **prose**, a non-reserved `<<name>>` becomes an HTML link to `#chunk-…` (`parser.ChunkAnchor`). Each noweb-style definition gets that anchor and a heading. If a chunk body references other chunks, weave appends a **Uses …** line after the fenced block. The render theme’s chunk table links to the same ids.
 
 ---
 
@@ -120,7 +134,7 @@ Variables come from `--var key=value` (bare `--var debug` ⇒ `"true"`). Nested 
 1. Preprocessor is the only stage that follows imports and evaluates `<<if>>`.
 2. Parser never executes code; it only builds `[]*Chunk`.
 3. Tangle writes only chunks with `file:` (unless `TangleChunk` is asked for a name).
-4. Weave never writes binary; it produces markdown.
+4. Weave never writes binary; it produces markdown. Prose `<<name>>` becomes a link to `#chunk-…`; each definition gets that anchor. Chunk bodies that reference other chunks get a “Uses …” line.
 5. Render weaves first, then Goldmark (GFM + auto heading IDs + unsafe HTML).
 6. `sync` is only reliable if tangle was run with `--line-directives`.
 
@@ -130,7 +144,7 @@ Variables come from `--var key=value` (bare `--var debug` ⇒ `"true"`). Nested 
 
 ### `pkg/parser`
 
-- `Chunk`, `Document`, `Merge`, tags, `ChunkTable`.
+- `Chunk`, `Document`, `Merge`, tags, `ChunkTable`, `ChunkAnchor`.
 - `ParseLines(lines, sourcePath)` — fence state machine + noweb chunk state.
 - Duplicate names across files: `Merge` unless override.
 
@@ -155,7 +169,7 @@ Variables come from `--var key=value` (bare `--var debug` ⇒ `"true"`). Nested 
 
 ### `pkg/weave`
 
-- Preprocess, then `stripControlSyntax`: drop headers/`>>`/directives; wrap implicit chunk bodies in fences.
+- Preprocess, then `stripControlSyntax`: drop headers/`>>`/directives; wrap implicit chunk bodies in fences; linkify prose refs; **Uses** lines; skip reserved names.
 
 ### `cmd/goweb`
 
@@ -163,8 +177,10 @@ Cobra root. Subcommands live in:
 
 | File | Command |
 |------|---------|
-| `main.go` | `tangle`, `weave`, `init`, flags, watch |
-| `render_cmd.go` | `render`, default HTML theme, site mode |
+| `main.go` | `tangle`, `weave`, `init`, flags, watch, `parseVars` |
+| `gitvars.go` | `AUTHOR`/`EMAIL`/`REPO` from `git config` when unset |
+| `theme.go` | `renderDefaultTheme` (lit-lang.org palette, no link underlines) |
+| `render_cmd.go` | `render`, site mode, `PageData` |
 | `index_cmd.go` | `index` |
 | `graph_cmd.go` | `graph` (`--cluster` by output file) |
 | `reverse_cmd.go` | `reverse` |
@@ -203,18 +219,19 @@ Watch mode re-tangles on write/create (100ms debounce).
 
 ## 6. Default HTML theme
 
-When `--template` is omitted, `renderDefaultTheme` emits a **light** documentation page (GitBook / [lit-lang/lit](https://github.com/lit-lang/lit) docs style):
+When `--template` is omitted, `renderDefaultTheme` matches [lit-lang.org](https://lit-lang.org/) **without** link or heading underlines:
 
-- White page, light sidebar, dark text, blue accents
-- System / Inter-like sans, no dark-mode media query
-- highlight.js `github` style only
-- Sidebar TOC from headings; chunk index `<details>`
-- SEO: `description`, Open Graph, Twitter card, canonical
-- AEO: JSON-LD `SoftwareApplication` + `TechArticle`, semantic `article`, `llms.txt` expected on published sites
+- System UI font stack, `#ffcd42` primary, `#291f04` footer, `#333` body text
+- 2px black borders and 4px offset shadows on tables and code
+- Centered header (logo + Source / Documentation) and `main` (max-width 800px)
+- Links: bold, no underline; hover fades opacity
+- SEO: `description`, Open Graph, Twitter card, canonical (`Pages` from `REPO`)
+- AEO: JSON-LD `SoftwareApplication` + `TechArticle`; `llms.txt` on published sites
+- Footer / meta author from git-backed `AUTHOR` / `EMAIL` / `REPO` when set
 
-Do **not** reintroduce the Read the Docs dark navy sidebar or `prefers-color-scheme: dark` as default.
+Do **not** reintroduce a Read the Docs navy sidebar, auto dark mode, or underlined links. The example todo app uses the same palette. Header: **View source** → `docs.html`, **GitHub** → `{{REPO}}`.
 
-Template context (`PageData`): `Title`, `Content`, `Source`, `Chunks`, `Headings`.
+Template context (`PageData`): `Title`, `Content`, `Source`, `Chunks` (incl. `ID`), `Headings`, `Author`, `Email`, `Repo`, `Pages`.
 
 ---
 
@@ -222,16 +239,18 @@ Template context (`PageData`): `Title`, `Content`, `Source`, `Chunks`, `Headings
 
 A **single** example lives in `examples/preact-todo/`:
 
-- Literate sources: `main.md`, `app.md`, `components.md`, `config.md`
-- Tangle → Preact + Bun + Tailwind app (`src/*`, `package.json`, `index.html`, …)
+- Literate sources: `main.md`, `app.md`, `components.md`, `config.md` (also linked from rendered docs)
+- Tangle → Preact + htm ES modules (`src/*.js`, `package.json`, `index.html`) — **no bundler**, no Tailwind/Bun required to run
+- `docs.html` — `goweb render` of `main.md` (literate programming primer, tags/graphs/LLM context)
 - Tests: `preact_todo_test.go` (tangle smoke)
-- Demo vars: `APP_NAME`, `AUTHOR`, `debug`
+- Vars: `APP_NAME` via `--var`; `AUTHOR`/`EMAIL`/`REPO` from git config unless overridden; `debug` for logs
+- Tags: `component`, `config`, `debug`, `meta`, `override-demo`
 
 ```bash
 cd examples/preact-todo
-goweb tangle --var APP_NAME="Todo App" --var AUTHOR="You" --var debug=true main.md
-bun install && bun run dev
-goweb render main.md --var APP_NAME="Todo App" --var AUTHOR="You" --var debug=true -o index.html
+goweb tangle --var APP_NAME="Todo App" --var debug=true main.md
+python -m http.server 8080
+goweb render main.md --var APP_NAME="Todo App" --var debug=true -o docs.html
 ```
 
 Do not add a second example tree unless the product owner asks. The old Go CLI `examples/todo/` was removed.
@@ -240,8 +259,7 @@ Do not add a second example tree unless the product owner asks. The old Go CLI `
 
 ## 8. Tests and fixtures
 
-- Unit tests next to packages: `pkg/*/*_test.go`, `cmd/goweb/render_cmd_test.go`
-- `testdata/` for parser/tangle fixtures
+- Unit tests next to packages: `pkg/*/*_test.go`, `cmd/goweb/*_test.go`, `examples/preact-todo/preact_todo_test.go`
 - Example test must keep working after markdown edits
 - `go test ./...` is the gate before publish
 
@@ -249,9 +267,11 @@ Do not add a second example tree unless the product owner asks. The old Go CLI `
 
 ## 9. Publishing
 
-- **Source:** GitHub repo `goweb` on the authenticated `gh` account, default branch `master`
-- **Docs/demo:** `gh-pages` branch: rendered example `index.html` plus `llms.txt`, `robots.txt`, `sitemap.xml`
-- Do not commit `.todo/` or `TODO.md` (scrubbed from history)
+- **Source:** `github.com/xyzzyapps/goweb`, default branch `master`
+- **License:** Creative Commons Attribution-ShareAlike 4.0 (`LICENSE`)
+- **Docs/demo:** `gh-pages` — example `index.html` (app), `docs.html`, `llms.txt`, `robots.txt`, `sitemap.xml`
+- Do not commit `.todo/`, `TODO.md`, or `draft/` (gitignore; `.todo` was scrubbed from history)
+- Agent skill: `.agents/skills/goweb/SKILL.md`
 
 ---
 
@@ -263,4 +283,5 @@ Do not add a second example tree unless the product owner asks. The old Go CLI `
 4. Never restore RTD dark chrome or a second example without being asked.
 5. After UI/theme changes, re-render the example HTML.
 6. `go test ./...` and tangle the example before claiming done.
-7. History must stay free of `.todo/` and `TODO.md`.
+7. History must stay free of `.todo/` and `TODO.md`. Do not commit `draft/`.
+8. `<<override>>` is a directive, never a chunk link.

@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/manic/goweb/pkg/preproc"
-	"github.com/manic/goweb/pkg/parser"
-	"github.com/manic/goweb/pkg/tangle"
+	"github.com/xyzzyapps/goweb/pkg/preproc"
+	"github.com/xyzzyapps/goweb/pkg/parser"
+	"github.com/xyzzyapps/goweb/pkg/tangle"
 )
 
 // TestTanglePreactTodo verifies that tangling the example produces
@@ -51,6 +51,8 @@ func TestTanglePreactTodo(t *testing.T) {
 	vars := map[string]string{
 		"APP_NAME": "TestTodo",
 		"AUTHOR":   "Tester",
+		"EMAIL":    "tester@example.com",
+		"REPO":     "https://github.com/xyzzyapps/goweb",
 		"debug":    "true",
 	}
 	preprocResult, err := preproc.Process(filepath.Join(dir, "main.md"), vars)
@@ -71,16 +73,14 @@ func TestTanglePreactTodo(t *testing.T) {
 	// Verify expected output files exist with content.
 	expectedFiles := []string{
 		"package.json",
-		"tsconfig.json",
-		"tailwind.config.js",
 		"index.html",
 		"LICENSE",
-		"src/main.tsx",
-		"src/app.tsx",
+		"src/main.js",
+		"src/app.js",
 		"src/style.css",
-		"src/components/add-todo.tsx",
-		"src/components/todo-list.tsx",
-		"src/components/todo-item.tsx",
+		"src/components/add-todo.js",
+		"src/components/todo-list.js",
+		"src/components/todo-item.js",
 	}
 	for _, f := range expectedFiles {
 		path := filepath.Join(dir, f)
@@ -108,25 +108,29 @@ func TestTanglePreactTodo(t *testing.T) {
 	}
 
 	checkContent("package.json", `"name": "TestTodo"`)
-	checkContent("package.json", `"preact"`)
-	checkContent("tsconfig.json", `"jsxImportSource": "preact"`)
 	checkContent("index.html", `TestTodo`)
-	checkContent("index.html", `src/main.tsx`)
-	checkContent("src/main.tsx", `render(<App />`)
-	checkContent("src/app.tsx", `function App()`)
-	checkContent("src/app.tsx", `handleAdd`)
-	checkContent("src/app.tsx", `handleToggle`)
-	checkContent("src/app.tsx", `handleDelete`)
-	checkContent("src/style.css", `@tailwind base`)
-	checkContent("src/components/add-todo.tsx", `export function AddTodo`)
-	checkContent("src/components/todo-list.tsx", `export function TodoList`)
-	checkContent("src/components/todo-item.tsx", `export function TodoItem`)
-	checkContent("LICENSE", `MIT License`)
+	checkContent("index.html", `src/main.js`)
+	checkContent("index.html", `importmap`)
+	checkContent("src/main.js", `import { render } from "preact"`)
+	checkContent("src/app.js", `function App()`)
+	checkContent("src/app.js", `View source`)
+	checkContent("src/app.js", `href="docs.html"`)
+	checkContent("src/app.js", `https://github.com/xyzzyapps/goweb`)
+	checkContent("src/app.js", `handleAdd`)
+	checkContent("src/app.js", `handleToggle`)
+	checkContent("src/app.js", `handleDelete`)
+	checkContent("src/style.css", `--color-primary: #ffcd42`)
+	checkContent("src/components/add-todo.js", `export function AddTodo`)
+	checkContent("src/components/todo-list.js", `export function TodoList`)
+	checkContent("src/components/todo-item.js", `export function TodoItem`)
+	checkContent("LICENSE", `Creative Commons Attribution-ShareAlike`)
+	checkContent("LICENSE", `Tester`)
+	checkContent("LICENSE", `tester@example.com`)
 
 	// Verify debug chunks are included when debug=true.
-	checkContent("src/app.tsx", `console.log("[debug] added todo:"`)
-	checkContent("src/app.tsx", `console.log("[debug] toggled todo:"`)
-	checkContent("src/app.tsx", `console.log("[debug] deleted todo:"`)
+	checkContent("src/app.js", `console.log("[debug] added todo:"`)
+	checkContent("src/app.js", `console.log("[debug] toggled todo:"`)
+	checkContent("src/app.js", `console.log("[debug] deleted todo:"`)
 
 	// Verify the override-demo tag is present in todo-list.
 	// (todo-list.tsx has tags: component, override-demo)

@@ -9,9 +9,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/manic/goweb/pkg/parser"
-	"github.com/manic/goweb/pkg/preproc"
-	"github.com/manic/goweb/pkg/tangle"
+	"github.com/xyzzyapps/goweb/pkg/parser"
+	"github.com/xyzzyapps/goweb/pkg/preproc"
+	"github.com/xyzzyapps/goweb/pkg/tangle"
 )
 
 func registerSyncCmd() {

@@ -2,7 +2,7 @@
 
 **goweb** is a literate programming tool that brings noweb-style chunk syntax to GitHub Flavored Markdown. Write documentation and code in a single `.md` file, then **tangle** to extract source files, **weave** to generate clean markdown, or **sync** to apply edits back from the generated code.
 
-This codebase was written with **Grok**, **DeepSeek**, **Flask**, and **Gemini**. Later edits (spec, light theme, example, history cleanup, and GitHub Pages) were made by **Grok 4.6** (xAI). See [SPEC.md](SPEC.md) for the full language and architecture contract (for humans and agents).
+This codebase was written with **DeepSeek** and **Grok 4.6** (xAI). See [SPEC.md](SPEC.md) for the full language and architecture contract (for humans and agents).
 
 ## Features
 
@@ -26,9 +26,11 @@ This codebase was written with **Grok**, **DeepSeek**, **Flask**, and **Gemini**
 - **Escape `\>>`** — literal `>>` inside chunk bodies
 - **Topological sorting** — chunks are emitted in dependency order
 - **Cycle detection** — circular references are caught and reported
-- **Weave** — strips goweb syntax to produce clean markdown
+- **Weave** — clean markdown; prose `<<name>>` becomes in-document chunk links
+- **Render** — HTML (lit-lang.org palette, no underlines) via `goweb render`
 - **Cross-reference index** — `goweb index` prints a table of all chunks and their references
-- **Dependency diagrams** — `goweb graph` outputs Graphviz DOT format
+- **Dependency diagrams** — `goweb graph` outputs Graphviz DOT (`--cluster` by output file)
+- **Tags** — `tags:` shelves; `goweb tangle --match` extracts one shelf (good LLM context with `index`/`graph`)
 - **Source → literate** — `goweb reverse` converts source files into `.md` chunks
 - **Project scaffolding** — `goweb init` creates a new literate program skeleton
 - **YAML frontmatter** — `--- key: value ---` config at the top of `.md` files
@@ -36,13 +38,13 @@ This codebase was written with **Grok**, **DeepSeek**, **Flask**, and **Gemini**
 ## Install
 
 ```bash
-go install github.com/manic/goweb/cmd/goweb@latest
+go install github.com/xyzzyapps/goweb/cmd/goweb@latest
 ```
 
 Or build from source:
 
 ```bash
-git clone https://github.com/manic/goweb
+git clone https://github.com/xyzzyapps/goweb
 cd goweb
 go build -o goweb ./cmd/goweb
 ```
@@ -63,6 +65,10 @@ Attributes:
 |-----------|-------------|
 | `file: path` | Write resolved chunk to this file path |
 | `pipe: cmd` | Pipe resolved content through an external command |
+| `exec: cmd` | Run the body; stdout replaces the chunk |
+| `session: name` | Share an exec process across chunks |
+| `tags: a,b` | Labels; `goweb tangle --match` filters by tag |
+| `override` | Replace any earlier chunk of the same name |
 
 Chunks can appear inside fenced code blocks or directly in markdown.
 
@@ -146,13 +152,27 @@ goweb render program.md --var APP_NAME="My App" --var debug=true > docs.html
 goweb render --site docs/ --output-dir site/
 ```
 
-The default theme is a **light** documentation layout in the spirit of [lit-lang/lit](https://github.com/lit-lang/lit) / GitBook docs:
-- White page, light sidebar, system/Inter typography, blue accents
-- **highlight.js** GitHub (light) syntax highlighting only
-- Sidebar TOC, breadcrumbs, chunk index
+### Graph and index (chunk map)
+
+Tags (`tags: component`) are shelves. `goweb tangle --match component` writes only that shelf. The graph is who points at whom — useful for humans and as compact context for an LLM (map first, then one chunk).
+
+```bash
+# Text table: each chunk, where it is defined, who references it
+goweb index program.md
+
+# Graphviz DOT — boxes and arrows (A → B means A contains <<B>>)
+goweb graph program.md | dot -Tsvg -o deps.svg
+goweb graph --cluster program.md | dot -Tpng -o deps.png
+```
+
+`--cluster` groups chunks by the file they tangle into.
+
+The default theme follows [lit-lang.org](https://lit-lang.org/):
+- System UI fonts, amber `#ffcd42` primary, dark footer, no link underlines
+- Hard offset shadows on tables, asides, and code blocks
+- Centered header + `main` (max 800px)
 - SEO (Open Graph, Twitter, canonical) and AEO (JSON-LD, semantic article)
-- Code language auto-detected from `file:` extension (`.tsx` → TypeScript, `.css` → CSS, etc.)
-- Responsive layout with mobile sidebar toggle
+- Unset `AUTHOR` / `EMAIL` / `REPO` come from `git config`
 
 ## Architecture
 
@@ -189,29 +209,28 @@ source.md
 
 ## Example
 
-There is a **single** example: a Preact + Bun + Tailwind TODO app (`examples/preact-todo/`).
+There is a **single** example: a Preact + htm TODO app (`examples/preact-todo/`) that runs in the browser with no bundler.
 
-A frontend TODO app built with **Preact**, **Bun**, and **Tailwind CSS** that demonstrates:
-- `<<chunk>>=` definitions with `file:` → outputs to `src/*.tsx`, `package.json`, `index.html`, etc.
+It demonstrates:
+- `<<chunk>>=` definitions with `file:` → outputs to `src/*.js`, `package.json`, `index.html`, etc.
 - `<<import "file.md">>` — cross-file references across 4 source files
 - `<<if debug>>`/`<<end>>` — conditional console.log for debug mode
-- `tags:` — categorization (e.g., `tags: component`, `tags: config`, `tags: debug`)
+- `tags:` — shelves such as `component`, `config`, `debug`; `goweb tangle --match` and `goweb graph` / `goweb index` for maps and LLM context
 - `--var` — configurable `APP_NAME`, `AUTHOR`, and `debug` variables
 - `{{var}}` substitution — variables in `package.json`, `index.html`, LICENSE
 - `<<override>>` — replace components easily
 - Multiple sub-components (App, TodoList, TodoItem, AddTodo)
-- Tailwind CSS utility classes for responsive design
+- Static ES modules + import map (serve the folder; do not open `file://`)
 
 ```bash
 cd examples/preact-todo
-goweb tangle --var APP_NAME="My Todo" --var AUTHOR="You" --var debug=true main.md
-bun install
-bun run dev
+goweb tangle --var APP_NAME="My Todo" --var debug=true main.md
+python -m http.server 8080
 ```
 
 Render the documentation to HTML with the light theme:
 ```bash
-goweb render main.md --var APP_NAME="Todo App" --var AUTHOR="You" --var debug=true -o index.html
+goweb render main.md --var APP_NAME="Todo App" --var debug=true -o docs.html
 ```
 
 The rendered HTML is published on GitHub Pages (`gh-pages`) with SEO and AEO metadata.
@@ -225,10 +244,11 @@ pkg/preproc/          Imports, conditionals, frontmatter
 pkg/graph/            Dependency graph, topological sort
 pkg/tangle/           Reference expansion, pipes, exec, file output
 pkg/weave/            Strip goweb syntax → clean markdown
-examples/preact-todo/ Single example (Preact + Bun + Tailwind)
+examples/preact-todo/ Single example (Preact + htm, no bundler)
 SPEC.md               Language and architecture spec (agents + humans)
+.agents/skills/goweb/ Agent skill for using this tool
 ```
 
 ## License
 
-MIT
+[Creative Commons Attribution-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/) (CC BY-SA 4.0). See [LICENSE](LICENSE).

@@ -5,7 +5,7 @@ A step-by-step guide to literate programming with goweb.
 ## Installation
 
 ```bash
-go install github.com/manic/goweb/cmd/goweb@latest
+go install github.com/xyzzyapps/goweb/cmd/goweb@latest
 ```
 
 Or build from source:
@@ -279,7 +279,18 @@ Generate clean markdown from your literate program:
 goweb weave program.md > README.md
 ```
 
-This strips all `<<...>>` control syntax, leaving clean documentation.
+This strips control syntax. In prose, `<<name>>` becomes a link to that chunk; reserved names (`override`, `import`, …) stay literal.
+
+## 15. Render, index, and graph
+
+```bash
+goweb render program.md -o docs.html
+goweb index program.md
+goweb graph program.md | dot -Tsvg -o deps.svg
+goweb tangle --match component program.md
+```
+
+Unset `AUTHOR`, `EMAIL`, and `REPO` come from `git config`. See [SPEC.md](SPEC.md) and the example book in `examples/preact-todo/docs.html`.
 
 ## Summary
 
@@ -289,7 +300,13 @@ This strips all `<<...>>` control syntax, leaving clean documentation.
 | `goweb tangle file.md` | Extract code chunks into source files |
 | `goweb tangle file.md chunk` | Print a single chunk to stdout |
 | `goweb tangle --watch file.md` | Auto-tangle on file changes |
+| `goweb tangle --match tag` | Only chunks with that tag |
 | `goweb weave file.md` | Generate clean markdown docs |
+| `goweb render file.md` | HTML documentation |
+| `goweb index file.md` | Cross-reference table |
+| `goweb graph file.md` | Graphviz DOT dependency graph |
+| `goweb sync file.md` | Apply tangled edits back (needs `--line-directives`) |
+| `goweb reverse files…` | Wrap source files as chunks |
 | `goweb tangle --var key=val` | Set variables for conditionals/`{{var}}` |
 | `goweb tangle --line-directives` | Add source-location comments |
 | `goweb tangle --output-dir ./out` | Write output to a subdirectory |

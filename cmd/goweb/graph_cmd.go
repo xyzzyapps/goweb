@@ -7,8 +7,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/manic/goweb/pkg/parser"
-	"github.com/manic/goweb/pkg/preproc"
+	"github.com/xyzzyapps/goweb/pkg/parser"
+	"github.com/xyzzyapps/goweb/pkg/preproc"
 )
 
 // registerGraphCmd adds the graph (DOT) subcommand to rootCmd.

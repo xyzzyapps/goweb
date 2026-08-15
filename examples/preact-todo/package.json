@@ -1,18 +1,8 @@
 {
   "name": "Todo App",
   "version": "1.0.0",
-  "author": "You",
-  "scripts": {
-    "dev": "bun run --hot src/main.tsx",
-    "build": "bun build src/main.tsx --outdir dist",
-    "preview": "bun run dist/index.html"
-  },
-  "dependencies": {
-    "preact": "^10.26.0"
-  },
-  "devDependencies": {
-    "tailwindcss": "^3.4.0",
-    "typescript": "^5.6.0",
-    "@types/node": "^22.0.0"
-  }
+  "author": "Xyzzy Apps",
+  "private": true,
+  "type": "module",
+  "description": "goweb literate example — Preact + htm, no bundler"
 }

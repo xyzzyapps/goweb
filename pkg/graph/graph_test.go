@@ -3,7 +3,7 @@ package graph
 import (
 	"testing"
 
-	"github.com/manic/goweb/pkg/parser"
+	"github.com/xyzzyapps/goweb/pkg/parser"
 )
 
 func TestFindReferences(t *testing.T) {

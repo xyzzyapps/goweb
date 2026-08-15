@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/manic/goweb/pkg/parser"
+	"github.com/xyzzyapps/goweb/pkg/parser"
 )
 
 func TestTangle(t *testing.T) {

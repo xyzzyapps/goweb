@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A small todo, written as a book — goweb</title>
+<meta name="description" content="A small todo, written as a book — literate programming with goweb: noweb-style chunks on GitHub Flavored Markdown. Tangle, weave, and render documentation.">
+<meta name="robots" content="index, follow">
+<meta name="author" content="Xyzzy Apps">
+<link rel="canonical" href="https://xyzzyapps.github.io/goweb/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="A small todo, written as a book — goweb">
+<meta property="og:description" content="Literate programming with noweb-style chunks on GitHub Flavored Markdown.">
+<meta property="og:url" content="https://xyzzyapps.github.io/goweb/">
+<meta property="og:site_name" content="goweb">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="A small todo, written as a book — goweb">
+<meta name="twitter:description" content="Literate programming with noweb-style chunks on GitHub Flavored Markdown.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.0/styles/atom-one-light.min.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "name": "goweb",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Windows, macOS, Linux",
+      "description": "Noweb-style literate programming for GitHub Flavored Markdown.",
+      "url": "\"https://github.com/xyzzyapps/goweb\"",
+      "author": [
+        {"@type": "Organization", "name": "DeepSeek"},
+        {"@type": "SoftwareApplication", "name": "Grok 4.6", "publisher": {"@type": "Organization", "name": "xAI"}}
+      ],
+      "license": "https://creativecommons.org/licenses/by-sa/4.0/"
+    },
+    {
+      "@type": "TechArticle",
+      "headline": "\"A small todo, written as a book\"",
+      "description": "goweb literate program rendered as HTML documentation.",
+      "author": {"@type": "Organization", "name": "goweb"},
+      "mainEntityOfPage": "\"https://xyzzyapps.github.io/goweb/\""
+    }
+  ]
+}
+</script>
+<style>
+:root {
+  --color-primary: #ffcd42;
+  --color-primary-light: rgba(255, 205, 66, 0.1);
+  --color-primary-darker: #291f04;
+  --color-primary-text: #333;
+  --gradient-primary: linear-gradient(to right, var(--color-primary), #ff6102);
+  --gradient-underline: linear-gradient(transparent, transparent) no-repeat 0 0,
+    linear-gradient(transparent, transparent) no-repeat 0 0,
+    var(--gradient-primary) no-repeat 0 calc(100% - 0.5px) / 100% 2px;
+  --color-code-background: #f8f8f8;
+  --color-code-foreground: #383a42;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: none; text-size-adjust: none; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--color-primary-text);
+  background: #fff;
+  accent-color: black;
+}
+header { padding: 1rem; }
+.Logo {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.35rem; width: fit-content; margin: 0 auto; text-decoration: none; color: inherit;
+}
+.Logo p { font-size: 2rem; font-weight: bold; margin: 0; }
+.Nav ul {
+  list-style: none; display: flex; gap: 2rem; justify-content: center;
+  padding: 0; margin: 1rem 0 0;
+}
+.Nav a { color: black; font-weight: 600; text-decoration: none; }
+.Nav a:hover { color: #000; opacity: 0.65; }
+main { max-width: 800px; margin: 0 auto; padding: 1rem 1rem 3rem; }
+article h1, article h2, article h3, article h4 { color: black; margin: 2rem 0 1rem; line-height: 1.1; text-wrap: balance; }
+article h1, article h2 { padding-bottom: 0.5rem; margin-bottom: 0; }
+article h1 { font-size: 2em; }
+article p { margin: 1rem 0; }
+article a { color: black; font-weight: 600; text-decoration: none; }
+article a:hover { opacity: 0.65; }
+.chunk-table a { text-decoration: none; }
+article code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: var(--color-code-background);
+  border: 1px solid var(--color-primary-text);
+  border-radius: 0.15rem;
+  box-shadow: 1px 1px 0 var(--color-primary-text);
+  font-size: 16px;
+  padding: 0 0.2rem;
+}
+article pre {
+  white-space: pre; overflow: auto;
+  border-radius: 0.5rem; padding: 0.75rem;
+  background: var(--color-code-background);
+  color: var(--color-code-foreground);
+  border: 2px solid var(--color-primary-text);
+  box-shadow: 4px 4px 0 var(--color-primary-text);
+  font-size: 14px;
+}
+article pre code { background: none; border: 0; box-shadow: none; padding: 0; font-size: inherit; }
+article aside, article blockquote {
+  background: var(--color-primary-light);
+  border: 2px solid var(--color-primary);
+  border-radius: 0.5rem;
+  box-shadow: 4px 4px 0 var(--color-primary);
+  padding: 1rem; margin: 1rem 0;
+}
+article table {
+  width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.9rem;
+  box-shadow: 4px 4px 0 var(--color-primary-text);
+}
+article th { background: var(--color-primary); font-weight: 600; }
+article th, article td { padding: 0.75rem 1rem; border: 2px solid var(--color-primary-text); text-align: left; }
+article tr:nth-child(even) { background: var(--color-primary-light); }
+article ul, article ol { margin: 1rem 0 1rem 1.4rem; }
+.chunk-table {
+  margin: 2rem 0; padding: 1rem;
+  background: var(--color-primary-light);
+  border: 2px solid var(--color-primary);
+  border-radius: 0.5rem;
+  box-shadow: 4px 4px 0 var(--color-primary);
+}
+.chunk-table summary { cursor: pointer; font-weight: 600; }
+footer {
+  background: var(--color-primary-darker);
+  padding: 2rem 1rem; color: #fff; text-align: center; font-size: 0.9rem;
+}
+footer a { color: var(--color-primary); font-weight: 600; }
+footer h2 { color: var(--color-primary); background: none; margin: 0 0 0.5rem; }
+</style>
+</head>
+<body>
+<header>
+  <a class="Logo" href="#">
+    <p>goweb</p>
+  </a>
+  <nav class="Nav" aria-label="Main navigation">
+    <ul>
+      <li><a href="https://github.com/xyzzyapps/goweb">Source</a></li>
+      <li><a href="#chunks">Documentation</a></li>
+    </ul>
+  </nav>
+</header>
+<main>
+  <article itemscope itemtype="https://schema.org/TechArticle">
+    <meta itemprop="headline" content="A small todo, written as a book">
+    <h1 id="a-small-todo-written-as-a-book">A small todo, written as a book</h1>
+<h1 id="the-page-you-actually-use">The page you actually use</h1>
+<p>This chapter is the app's front door. <a href="#chunk-app-js"><code>&lt;&lt;app-js&gt;&gt;</code></a> is the room: it remembers
+the list and the current filter, and it asks the smaller pieces — add, row,
+list — to draw themselves. <a href="#chunk-main-js"><code>&lt;&lt;main-js&gt;&gt;</code></a> only does one job: find the empty
+<code>&lt;div id=&quot;app&quot;&gt;</code> in <a href="#chunk-index-html"><code>&lt;&lt;index-html&gt;&gt;</code></a> and place that room inside it.</p>
+<p>If you have used a notebook, this file is the cell that <em>owns the variables</em>.
+The hooks below are those variables. The markup below is the output.</p>
+<h2 id="chunks-in-this-file">Chunks in this file</h2>
+<p>This file exports these files when tangled:</p>
+<ul>
+<li><code>src/style.css</code> — lit-lang.org-inspired styles</li>
+<li><code>src/main.js</code> — Mounts the <code>App</code> component (browser ES module)</li>
+<li><code>src/app.js</code> — The full App component with state management and filter UI</li>
+</ul>
+<h2 id="goweb-features-shown">Goweb features shown</h2>
+<p><strong>Chunk order independence.</strong> The handler functions (<code>handleAdd</code>, <code>handleToggle</code>, <code>handleDelete</code>)
+are defined as separate named chunks (<code>&lt;&lt;app-add-todo&gt;&gt;</code>, <code>&lt;&lt;app-toggle-todo&gt;&gt;</code>, <code>&lt;&lt;app-delete-todo&gt;&gt;</code>)
+and referenced by <code>&lt;&lt;name&gt;&gt;</code> inside the <code>App</code> component. This means they can be defined
+<strong>after</strong> the render function that uses them — goweb resolves all references during tangling,
+so definition order doesn't matter.</p>
+<p><strong>Conditional compilation.</strong> Debug logging chunks (<code>&lt;&lt;debug-log-add&gt;&gt;</code>, <code>&lt;&lt;debug-log-toggle&gt;&gt;</code>,
+<code>&lt;&lt;debug-log-delete&gt;&gt;</code>) are wrapped in <code>&lt;&lt;if debug&gt;&gt;</code> / <code>&lt;&lt;end&gt;&gt;</code> directives. When you tangle
+with <code>--var debug=true</code>, these chunks are included. When <code>debug</code> is not set, they are stripped.
+This lets you maintain debug code alongside production code without runtime overhead.</p>
+<p><strong>Cross-file references.</strong> The <code>app.js</code> chunk imports from <code>./components/add-todo.js</code>,
+<code>./components/todo-list.js</code>, and <code>./components/todo-item.js</code>. These components are defined
+in <code>components.md</code> and imported via <code>&lt;&lt;import &quot;components.md&quot;&gt;&gt;</code> in <code>main.md</code>.</p>
+<p><strong>Chunk references for stubs.</strong> The <code>app-todo-ul</code> reference is left as a placeholder
+inside the JSX. During tangling, any chunk named <code>&lt;&lt;app-todo-ul&gt;&gt;</code> (defined elsewhere)
+will be substituted in its place. This is useful for out-of-order definition.</p>
+<p><a id="chunk-style-css"></a>
+<strong><a href="#chunk-style-css"><code>&lt;&lt;style-css&gt;&gt;</code></a></strong> · <code>src/style.css</code></p>
+<pre><code class="language-css">/* Palette and chrome match https://lit-lang.org/ */
+:root {
+  --color-primary: #ffcd42;
+  --color-primary-light: rgba(255, 205, 66, 0.12);
+  --color-primary-darker: #291f04;
+  --color-primary-text: #333;
+  --gradient-primary: linear-gradient(to right, #ffcd42, #ff6102);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--color-primary-text);
+  background: #fff;
+}
+
+.site-header {
+  padding: 1rem 1rem 0.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.site-brand {
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.view-source, .github-link {
+  font-weight: 600;
+  color: #000;
+  text-decoration: underline;
+  padding: 0.4rem 0.85rem;
+  border: 2px solid #000;
+  background: var(--color-primary);
+  box-shadow: 3px 3px 0 #000;
+}
+
+.github-link { background: #fff; }
+
+.view-source:hover, .github-link:hover { text-decoration: none; }
+
+.todo-app {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem 1rem 3rem;
+}
+
+.todo-app h1 {
+  margin: 0 0 1.25rem;
+  padding-bottom: 0.5rem;
+  background: linear-gradient(transparent, transparent) no-repeat 0 0,
+    var(--gradient-primary) no-repeat 0 calc(100% - 0.5px) / 100% 2px;
+}
+
+.todo-form { display: flex; gap: 0.5rem; }
+
+.todo-input, .todo-btn, .filter-btn, .todo-delete {
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.todo-input {
+  flex: 1;
+  padding: 0.55rem 0.75rem;
+  border: 2px solid #000;
+  background: #fff;
+  box-shadow: 3px 3px 0 #000;
+}
+
+.todo-btn, .filter-btn {
+  padding: 0.55rem 0.9rem;
+  border: 2px solid #000;
+  background: var(--color-primary);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 #000;
+}
+
+.filter-btn.is-active {
+  background: #ff6102;
+  color: #fff;
+}
+
+.filters { display: flex; gap: 0.5rem; margin: 1rem 0; flex-wrap: wrap; }
+
+.todo-list { list-style: none; padding: 0; margin: 0; }
+
+.todo-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  margin-bottom: 0.6rem;
+  border: 2px solid #000;
+  background: var(--color-primary-light);
+  box-shadow: 3px 3px 0 #000;
+}
+
+.todo-title.is-done { text-decoration: line-through; opacity: 0.55; }
+.todo-title { flex: 1; }
+
+.todo-delete {
+  border: 2px solid #000;
+  background: #fff;
+  cursor: pointer;
+  padding: 0.15rem 0.5rem;
+  font-weight: 700;
+}
+
+.todo-empty, .todo-count { text-align: center; color: #666; margin-top: 1rem; }
+
+.site-footer {
+  background: var(--color-primary-darker);
+  color: #fff;
+  text-align: center;
+  padding: 1.5rem 1rem;
+  font-size: 0.9rem;
+}
+.site-footer a { color: var(--color-primary); font-weight: 600; }
+</code></pre>
+<p><a id="chunk-main-js"></a>
+<strong><a href="#chunk-main-js"><code>&lt;&lt;main-js&gt;&gt;</code></a></strong> · <code>src/main.js</code></p>
+<pre><code class="language-jsx">import { render } from &quot;preact&quot;;
+import { html } from &quot;htm/preact&quot;;
+import { App } from &quot;./app.js&quot;;
+
+const root = document.getElementById(&quot;app&quot;);
+if (root) {
+  render(html`&lt;${App} /&gt;`, root);
+}
+</code></pre>
+<p><a id="chunk-app-js"></a>
+<strong><a href="#chunk-app-js"><code>&lt;&lt;app-js&gt;&gt;</code></a></strong> · <code>src/app.js</code></p>
+<pre><code class="language-jsx">import { useState } from &quot;preact/hooks&quot;;
+import { html } from &quot;htm/preact&quot;;
+import { AddTodo } from &quot;./components/add-todo.js&quot;;
+import { TodoItem } from &quot;./components/todo-item.js&quot;;
+
+export function App() {
+  const [todos, setTodos] = useState([]);
+  const [filter, setFilter] = useState(&quot;all&quot;);
+
+  app-add-todo
+  app-toggle-todo
+  app-delete-todo
+  app-filter-todos
+
+  return html`
+    &lt;header class=&quot;site-header&quot;&gt;
+      &lt;a class=&quot;site-brand&quot; href=&quot;#&quot;&gt;goweb&lt;/a&gt;
+      &lt;nav class=&quot;site-nav&quot;&gt;
+        &lt;a class=&quot;view-source&quot; href=&quot;docs.html&quot;&gt;View source&lt;/a&gt;
+        &lt;a class=&quot;github-link&quot; href=&quot;https://github.com/xyzzyapps/goweb&quot;&gt;GitHub&lt;/a&gt;
+      &lt;/nav&gt;
+    &lt;/header&gt;
+    &lt;div class=&quot;todo-app&quot;&gt;
+      &lt;h1&gt;Todo App&lt;/h1&gt;
+      &lt;${AddTodo} onAdd=${handleAdd} /&gt;
+      &lt;div class=&quot;filters&quot;&gt;
+        &lt;button
+          onClick=${() =&gt; setFilter(&quot;all&quot;)}
+          class=${&quot;filter-btn&quot; + (filter === &quot;all&quot; ? &quot; is-active&quot; : &quot;&quot;)}
+        &gt;
+          All
+        &lt;/button&gt;
+        &lt;button
+          onClick=${() =&gt; setFilter(&quot;active&quot;)}
+          class=${&quot;filter-btn&quot; + (filter === &quot;active&quot; ? &quot; is-active&quot; : &quot;&quot;)}
+        &gt;
+          Active
+        &lt;/button&gt;
+        &lt;button
+          onClick=${() =&gt; setFilter(&quot;done&quot;)}
+          class=${&quot;filter-btn&quot; + (filter === &quot;done&quot; ? &quot; is-active&quot; : &quot;&quot;)}
+        &gt;
+          Done
+        &lt;/button&gt;
+      &lt;/div&gt;
+      app-todo-ul
+      &lt;div class=&quot;todo-count&quot;&gt;
+        ${todos.length} item${todos.length !== 1 ? &quot;s&quot; : &quot;&quot;} total
+      &lt;/div&gt;
+    &lt;/div&gt;
+  `;
+}
+</code></pre>
+<p>Uses <a href="#chunk-app-add-todo"><code>&lt;&lt;app-add-todo&gt;&gt;</code></a>, <a href="#chunk-app-toggle-todo"><code>&lt;&lt;app-toggle-todo&gt;&gt;</code></a>, <a href="#chunk-app-delete-todo"><code>&lt;&lt;app-delete-todo&gt;&gt;</code></a>, <a href="#chunk-app-filter-todos"><code>&lt;&lt;app-filter-todos&gt;&gt;</code></a>, <a href="#chunk-app-todo-ul"><code>&lt;&lt;app-todo-ul&gt;&gt;</code></a>.</p>
+<p><a id="chunk-app-add-todo"></a>
+<strong><a href="#chunk-app-add-todo"><code>&lt;&lt;app-add-todo&gt;&gt;</code></a></strong></p>
+<pre><code>function handleAdd(title) {
+  const newTodo = {
+    id: Date.now(),
+    title,
+    done: false,
+  };
+  setTodos((prev) =&gt; [...prev, newTodo]);
+  debug-log-add
+}
+</code></pre>
+<p>Uses <a href="#chunk-debug-log-add"><code>&lt;&lt;debug-log-add&gt;&gt;</code></a>.</p>
+<p><a id="chunk-app-toggle-todo"></a>
+<strong><a href="#chunk-app-toggle-todo"><code>&lt;&lt;app-toggle-todo&gt;&gt;</code></a></strong></p>
+<pre><code>function handleToggle(id) {
+  setTodos((prev) =&gt;
+    prev.map((t) =&gt; (t.id === id ? { ...t, done: !t.done } : t))
+  );
+  debug-log-toggle
+}
+</code></pre>
+<p>Uses <a href="#chunk-debug-log-toggle"><code>&lt;&lt;debug-log-toggle&gt;&gt;</code></a>.</p>
+<p><a id="chunk-app-delete-todo"></a>
+<strong><a href="#chunk-app-delete-todo"><code>&lt;&lt;app-delete-todo&gt;&gt;</code></a></strong></p>
+<pre><code>function handleDelete(id) {
+  setTodos((prev) =&gt; prev.filter((t) =&gt; t.id !== id));
+  debug-log-delete
+}
+</code></pre>
+<p>Uses <a href="#chunk-debug-log-delete"><code>&lt;&lt;debug-log-delete&gt;&gt;</code></a>.</p>
+<p><a id="chunk-app-filter-todos"></a>
+<strong><a href="#chunk-app-filter-todos"><code>&lt;&lt;app-filter-todos&gt;&gt;</code></a></strong></p>
+<pre><code>const filtered = todos.filter((t) =&gt; {
+  if (filter === &quot;active&quot;) return !t.done;
+  if (filter === &quot;done&quot;) return t.done;
+  return true;
+});
+</code></pre>
+<p><a id="chunk-app-todo-ul"></a>
+<strong><a href="#chunk-app-todo-ul"><code>&lt;&lt;app-todo-ul&gt;&gt;</code></a></strong></p>
+<pre><code>&lt;ul class=&quot;todo-list&quot;&gt;
+  ${filtered.map((todo) =&gt; html`
+    &lt;li key=${todo.id}&gt;
+      &lt;${TodoItem}
+        todo=${todo}
+        onToggle=${handleToggle}
+        onDelete=${handleDelete}
+      /&gt;
+    &lt;/li&gt;
+  `)}
+  ${filtered.length === 0 &amp;&amp; html`
+    &lt;li class=&quot;todo-empty&quot;&gt;No todos yet. Add one above!&lt;/li&gt;
+  `}
+&lt;/ul&gt;
+</code></pre>
+<p><a id="chunk-debug-log-add"></a>
+<strong><a href="#chunk-debug-log-add"><code>&lt;&lt;debug-log-add&gt;&gt;</code></a></strong></p>
+<pre><code>console.log(&quot;[debug] added todo:&quot;, title);
+</code></pre>
+<p><a id="chunk-debug-log-toggle"></a>
+<strong><a href="#chunk-debug-log-toggle"><code>&lt;&lt;debug-log-toggle&gt;&gt;</code></a></strong></p>
+<pre><code>console.log(&quot;[debug] toggled todo:&quot;, id);
+</code></pre>
+<p><a id="chunk-debug-log-delete"></a>
+<strong><a href="#chunk-debug-log-delete"><code>&lt;&lt;debug-log-delete&gt;&gt;</code></a></strong></p>
+<pre><code>console.log(&quot;[debug] deleted todo:&quot;, id);
+</code></pre>
+<h1 id="the-small-pieces-of-the-screen">The small pieces of the screen</h1>
+<p>A todo app is three gestures: write something, look at the list, mark or
+discard a line. Each gesture is a component — a function that takes a few
+props and returns HTML. They live here so <a href="#chunk-app-js"><code>&lt;&lt;app-js&gt;&gt;</code></a> can stay a story about
+<em>state</em>, not about every button.</p>
+<p>You do not need to know Preact deeply to read them. A component is “given
+these values, draw this.” When a value changes, Preact draws again.</p>
+<h2 id="components">Components</h2>
+<ul>
+<li><strong><code>AddTodo</code></strong> (<code>src/components/add-todo.js</code>) — Controlled form with input and submit button. Uses <code>useState</code> for local input state. The form prevents default submission and calls the parent's <code>onAdd</code> callback.</li>
+<li><strong><code>TodoList</code></strong> (<code>src/components/todo-list.js</code>) — Standalone list component that maps over todos. Accepts <code>todos</code>, <code>onToggle</code>, and <code>onDelete</code> props. Tagged with <code>override-demo</code> to demonstrate goweb's chunk override feature.</li>
+<li><strong><code>TodoItem</code></strong> (<code>src/components/todo-item.js</code>) — Single todo row with checkbox, title, and delete button. Completed items use strikethrough styling.</li>
+</ul>
+<h2 id="goweb-features-shown-1">Goweb features shown</h2>
+<p><strong>The <code>file:</code> attribute.</strong> Each chunk definition includes <code>file: src/components/add-todo.js</code>,
+which tells goweb where to write the tangled output. The path is relative to the current
+working directory where <code>goweb tangle</code> is invoked.</p>
+<p><strong>Chunk tags.</strong> The <code>TodoList</code> component includes <code>tags: component, override-demo</code>. Tags
+are metadata that can be used for filtering, grouping, and documentation. The <code>goweb graph</code>
+command can show relationships filtered by tag.</p>
+<p><strong>Chunk overriding.</strong> The <code>override-demo</code> tag indicates that this chunk can be replaced
+via goweb's <code>&lt;&lt;override&gt;&gt;</code> mechanism. To override, create another chunk with the same
+name and use <code>&lt;&lt;override&gt;&gt;</code> before the definition:</p>
+<pre><code>&lt;&lt;override&gt;&gt;
+export function TodoList() { return null; }
+</code></pre>
+<p>The override takes precedence during tangling, making this a powerful mechanism
+for swapping implementations without modifying original source files.</p>
+<p><strong>Cross-file chunk resolution.</strong> These components are imported by <code>app.js</code> (defined in <code>app.md</code>)
+even though they are defined in this file. Goweb resolves all chunks across imported files
+during tangling, so the import order in <code>main.md</code> (<code>&lt;&lt;import &quot;app.md&quot;&gt;&gt;</code>, <code>&lt;&lt;import &quot;components.md&quot;&gt;&gt;</code>)
+ensures all chunks are available.</p>
+<p>Tangled output is browser ES modules (<code>.js</code> + <code>htm</code>) so a static server can serve them
+as <code>text/javascript</code>. JSX/TSX cannot run that way.</p>
+<p><a id="chunk-add-todo-component"></a>
+<strong><a href="#chunk-add-todo-component"><code>&lt;&lt;add-todo-component&gt;&gt;</code></a></strong> · <code>src/components/add-todo.js</code></p>
+<pre><code class="language-jsx">import { useState } from &quot;preact/hooks&quot;;
+import { html } from &quot;htm/preact&quot;;
+
+export function AddTodo({ onAdd }) {
+  const [value, setValue] = useState(&quot;&quot;);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const trimmed = value.trim();
+    if (trimmed === &quot;&quot;) return;
+    onAdd(trimmed);
+    setValue(&quot;&quot;);
+  }
+
+  return html`
+    &lt;form onSubmit=${handleSubmit} class=&quot;todo-form&quot;&gt;
+      &lt;input
+        type=&quot;text&quot;
+        value=${value}
+        onInput=${(e) =&gt; setValue(e.target.value)}
+        placeholder=&quot;What needs to be done?&quot;
+        class=&quot;todo-input&quot;
+      /&gt;
+      &lt;button type=&quot;submit&quot; class=&quot;todo-btn&quot;&gt;Add&lt;/button&gt;
+    &lt;/form&gt;
+  `;
+}
+</code></pre>
+<p><a id="chunk-todo-list-component"></a>
+<strong><a href="#chunk-todo-list-component"><code>&lt;&lt;todo-list-component&gt;&gt;</code></a></strong> · <code>src/components/todo-list.js</code></p>
+<pre><code class="language-jsx">import { html } from &quot;htm/preact&quot;;
+import { TodoItem } from &quot;./todo-item.js&quot;;
+
+export function TodoList({ todos, onToggle, onDelete }) {
+  return html`
+    &lt;ul class=&quot;todo-list&quot;&gt;
+      ${todos.map((todo) =&gt; html`
+        &lt;li key=${todo.id}&gt;
+          &lt;${TodoItem}
+            todo=${todo}
+            onToggle=${onToggle}
+            onDelete=${onDelete}
+          /&gt;
+        &lt;/li&gt;
+      `)}
+    &lt;/ul&gt;
+  `;
+}
+</code></pre>
+<p><a id="chunk-todo-item-component"></a>
+<strong><a href="#chunk-todo-item-component"><code>&lt;&lt;todo-item-component&gt;&gt;</code></a></strong> · <code>src/components/todo-item.js</code></p>
+<pre><code class="language-jsx">import { html } from &quot;htm/preact&quot;;
+
+export function TodoItem({ todo, onToggle, onDelete }) {
+  return html`
+    &lt;div class=&quot;todo-row&quot;&gt;
+      &lt;input
+        type=&quot;checkbox&quot;
+        checked=${todo.done}
+        onClick=${() =&gt; onToggle(todo.id)}
+      /&gt;
+      &lt;span class=${&quot;todo-title&quot; + (todo.done ? &quot; is-done&quot; : &quot;&quot;)}&gt;
+        ${todo.title}
+      &lt;/span&gt;
+      &lt;button
+        onClick=${() =&gt; onDelete(todo.id)}
+        class=&quot;todo-delete&quot;
+        aria-label=&quot;Delete&quot;
+      &gt;
+        ✕
+      &lt;/button&gt;
+    &lt;/div&gt;
+  `;
+}
+</code></pre>
+<h1 id="the-envelope">The envelope</h1>
+<p>Before any component can run, the browser needs a page and a way to find
+Preact. That is all this file is: a thin envelope. <a href="#chunk-index-html"><code>&lt;&lt;index-html&gt;&gt;</code></a> is the
+paper; the import map is the address book; <a href="#chunk-package-json"><code>&lt;&lt;package-json&gt;&gt;</code></a> is a name tag
+for humans and git, not a build ritual.</p>
+<h2 id="files-generated">Files generated</h2>
+<ul>
+<li><strong><code>index.html</code></strong> — HTML shell, import map (Preact + htm from esm.sh), app mount</li>
+<li><strong><code>package.json</code></strong> — Optional metadata (<code>Todo App</code>, <code>Xyzzy Apps</code>)</li>
+</ul>
+<h2 id="goweb-features-shown-2">Goweb features shown</h2>
+<p><strong><code>{{var}}</code> substitution.</strong> Placeholders like <code>Todo App</code> and <code>Xyzzy Apps</code> are replaced
+at tangling/render time via <code>--var APP_NAME=&quot;Todo App&quot;</code>. <code>AUTHOR</code>, <code>EMAIL</code>, and <code>REPO</code> default from git config (<code>user.name</code>, <code>user.email</code>, <code>remote.origin.url</code>).</p>
+<p>The import map is what makes <code>import { html } from &quot;htm/preact&quot;</code> work in the browser
+without a build step. Scripts must be <code>.js</code> so the server sends <code>text/javascript</code>.</p>
+<p><a id="chunk-package-json"></a>
+<strong><a href="#chunk-package-json"><code>&lt;&lt;package-json&gt;&gt;</code></a></strong> · <code>package.json</code></p>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;Todo App&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;author&quot;: &quot;Xyzzy Apps&quot;,
+  &quot;private&quot;: true,
+  &quot;type&quot;: &quot;module&quot;,
+  &quot;description&quot;: &quot;goweb literate example — Preact + htm, no bundler&quot;
+}
+</code></pre>
+<p><a id="chunk-index-html"></a>
+<strong><a href="#chunk-index-html"><code>&lt;&lt;index-html&gt;&gt;</code></a></strong> · <code>index.html</code></p>
+<pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;title&gt;Todo App&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Todo App — a goweb literate-programming example. Written with DeepSeek and Grok 4.6.&quot;&gt;
+  &lt;link rel=&quot;stylesheet&quot; href=&quot;src/style.css&quot;&gt;
+  &lt;script type=&quot;importmap&quot;&gt;
+  {
+    &quot;imports&quot;: {
+      &quot;preact&quot;: &quot;https://esm.sh/preact@10.26.4&quot;,
+      &quot;preact/hooks&quot;: &quot;https://esm.sh/preact@10.26.4/hooks&quot;,
+      &quot;htm/preact&quot;: &quot;https://esm.sh/htm@3.1.1/preact?external=preact&quot;
+    }
+  }
+  &lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div id=&quot;app&quot;&gt;&lt;/div&gt;
+  &lt;script type=&quot;module&quot; src=&quot;src/main.js&quot;&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p>You are reading a program the way you would read an essay.</p>
+<p>The pages below are ordinary prose. Nested in them are named pieces of source —
+<em>chunks</em> — that goweb can lift out into real files. The same text is both the
+explanation and the thing being explained. That old idea is called
+<strong>literate programming</strong>. Donald Knuth coined the phrase so a program could be
+told as a story to a human first, and only later assembled for the machine.</p>
+<p>If you have used a <a href="https://jupyter.org/">Jupyter notebook</a>, you already know a
+cousin of this. A notebook interleaves markdown cells with code cells you run
+in order. You scroll, you read, you execute. Literate programming is the same
+impulse turned inside out:</p>
+<ul>
+<li>A notebook is a <em>session</em>. Cells run top to bottom; the document is a log of
+thinking in time.</li>
+<li>A literate program is a <em>book</em>. Chunks can appear in the order that teaches
+best. The tool later <em>tangles</em> them into the order the computer needs.</li>
+</ul>
+<p>You do not press “Run cell.” You press <code>goweb tangle</code>, and a folder of
+JavaScript appears. You press <code>goweb render</code>, and you get this HTML — the book
+form. The handwritten pages are still here beside it:
+<a href="main.md">main.md</a>, <a href="app.md">app.md</a>, <a href="components.md">components.md</a>,
+<a href="config.md">config.md</a>. One source, two readings.</p>
+<p><strong>On this page:</strong> <a href="#what-you-are-looking-at">What you are looking at</a> · <a href="#what-preact-is">What Preact is</a> · <a href="#how-the-app-works">How the app works</a> · <a href="#usage">Usage</a> · <a href="#tags-graphs-and-talking-to-a-model">Tags, graphs, and talking to a model</a> · <a href="#license">License</a></p>
+<p><strong>Elsewhere:</strong> <a href="index.html">the running app</a> · <a href="main.md">this page as markdown</a> · <a href="app.md">app.md</a> · <a href="components.md">components.md</a> · <a href="config.md">config.md</a> · <a href="https://github.com/xyzzyapps/goweb">goweb on GitHub</a> · <a href="https://preactjs.com/">Preact</a> · <a href="https://github.com/developit/htm">htm</a> · <a href="https://lit-lang.org/">lit-lang.org</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></p>
+<h2 id="what-you-are-looking-at">What you are looking at</h2>
+<p>This particular book builds a tiny <strong>todo list</strong> you can open in a browser:
+type a task, tick it done, hide the finished ones, throw one away. There is a
+<strong>View source</strong> button at the top of the app that comes back here, and a
+<strong>GitHub</strong> button that goes to the repository.</p>
+<p>Nothing is hidden in a <code>node_modules</code> forest. The HTML, the styles, and the
+components are written in the chapters that follow, then extracted to
+<code>index.html</code> and <code>src/</code>. Serve that folder with any static file server and the
+app runs.</p>
+<p>The entry script is <a href="#chunk-main-js"><code>&lt;&lt;main-js&gt;&gt;</code></a>. It hangs <a href="#chunk-app-js"><code>&lt;&lt;app-js&gt;&gt;</code></a> on the page. The form is
+<a href="#chunk-add-todo-component"><code>&lt;&lt;add-todo-component&gt;&gt;</code></a>; each row is <a href="#chunk-todo-item-component"><code>&lt;&lt;todo-item-component&gt;&gt;</code></a>. The empty shell
+is <a href="#chunk-index-html"><code>&lt;&lt;index-html&gt;&gt;</code></a>.</p>
+<h2 id="what-preact-is">What Preact is</h2>
+<p><a href="https://react.dev/">React</a> taught the web a habit: describe the screen as a
+function of state, and let the library update the DOM. <a href="https://preactjs.com/">Preact</a>
+is that habit in a small suitcase — same idea, far less machinery, happy to
+live in a single <code>&lt;script type=&quot;module&quot;&gt;</code>.</p>
+<p>We do not use JSX (the HTML-looking syntax that needs a compiler). We use
+<a href="https://github.com/developit/htm">htm</a>: tagged templates. You write
+<code>html`&lt;button&gt;Add&lt;/button&gt;`</code> and the browser already understands it. An
+<em>import map</em> in <a href="#chunk-index-html"><code>&lt;&lt;index-html&gt;&gt;</code></a> points the words <code>preact</code> and <code>htm/preact</code> at
+CDN copies, so there is no install step to <em>run</em> the app.</p>
+<p>If you have only written Python notebooks: think of Preact as the part that
+redraws the output cell whenever the variables change. <code>useState</code> is a cell
+that remembers a value between redraws — the list of todos, which filter is
+on.</p>
+<h2 id="how-the-app-works">How the app works</h2>
+<p>A todo is a small record: an id, a title, a done flag. <a href="#chunk-app-js"><code>&lt;&lt;app-js&gt;&gt;</code></a> keeps an
+array of them, plus a filter (<code>all</code>, <code>active</code>, <code>done</code>).</p>
+<ul>
+<li><a href="#chunk-app-add-todo"><code>&lt;&lt;app-add-todo&gt;&gt;</code></a> appends a new item when the form in <a href="#chunk-add-todo-component"><code>&lt;&lt;add-todo-component&gt;&gt;</code></a>
+submits.</li>
+<li><a href="#chunk-app-toggle-todo"><code>&lt;&lt;app-toggle-todo&gt;&gt;</code></a> flips <code>done</code> when you click the checkbox on
+<a href="#chunk-todo-item-component"><code>&lt;&lt;todo-item-component&gt;&gt;</code></a>.</li>
+<li><a href="#chunk-app-delete-todo"><code>&lt;&lt;app-delete-todo&gt;&gt;</code></a> removes a row.</li>
+<li><a href="#chunk-app-filter-todos"><code>&lt;&lt;app-filter-todos&gt;&gt;</code></a> and <a href="#chunk-app-todo-ul"><code>&lt;&lt;app-todo-ul&gt;&gt;</code></a> decide what you see.</li>
+</ul>
+<p>The amber and black, the hard shadows, the quiet type — that is
+<a href="#chunk-style-css"><code>&lt;&lt;style-css&gt;&gt;</code></a>, drawn after the look of <a href="https://lit-lang.org/">lit-lang.org</a>.
+The page should feel like paper, not a dashboard.</p>
+<p>You can skip the next sections if you only wanted to understand the idea.
+They are for when you want to cook the book yourself.</p>
+<h2 id="goweb-features-demonstrated">Goweb features demonstrated</h2>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Usage in this example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>`` definitions</td>
+<td>Every source file is a named chunk with a <code>file:</code> attribute</td>
+</tr>
+<tr>
+<td><code>&lt;&lt;import &quot;file.md&quot;&gt;&gt;</code></td>
+<td>Cross-file references between all <code>.md</code> files</td>
+</tr>
+<tr>
+<td><code>&lt;&lt;ref&gt;&gt;</code> references</td>
+<td>Handler stubs defined as named refs, resolved during tangle</td>
+</tr>
+<tr>
+<td><code>&lt;&lt;if&gt;&gt;</code>/<code>&lt;&lt;else&gt;&gt;</code>/<code>&lt;&lt;end&gt;&gt;</code></td>
+<td>Conditional debug logging via <code>--var debug=true|false</code></td>
+</tr>
+<tr>
+<td><code>tags:</code> attribute</td>
+<td>Chunks tagged <code>component</code>, <code>config</code>, <code>debug</code>, <code>meta</code></td>
+</tr>
+<tr>
+<td><code>file:</code> attribute</td>
+<td>Each chunk maps directly to a source or config file</td>
+</tr>
+<tr>
+<td><code>--var</code> variables</td>
+<td><code>APP_NAME</code>, <code>AUTHOR</code>, <code>debug</code> injected at tangle/render time</td>
+</tr>
+<tr>
+<td><code>{{var}}</code> substitution</td>
+<td><code>Todo App</code>, <code>Xyzzy Apps</code> placeholders in JSON, HTML, LICENSE</td>
+</tr>
+<tr>
+<td>Language inference</td>
+<td><code>.js</code> → JavaScript, <code>.css</code> → CSS, <code>.json</code> → JSON in rendered output</td>
+</tr>
+<tr>
+<td><code>goweb tangle</code></td>
+<td>Extract all chunks into runnable source files</td>
+</tr>
+<tr>
+<td><code>goweb render</code></td>
+<td>Generate full HTML documentation with the light theme</td>
+</tr>
+<tr>
+<td><code>goweb weave</code></td>
+<td>Produce clean markdown with fenced code blocks</td>
+</tr>
+<tr>
+<td>Chunk order independence</td>
+<td>Handler functions defined after their usage in the render tree</td>
+</tr>
+<tr>
+<td>Cross-file chunk references</td>
+<td>Components imported from <code>components.md</code>, config from <code>config.md</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="usage">Usage</h2>
+<pre><code class="language-bash"># Tangle all source files into the examples/preact-todo/ directory
+goweb tangle --var APP_NAME=&quot;Todo App&quot; main.md
+
+# With debug logging (adds console.log statements)
+goweb tangle --var debug=true main.md
+
+# Serve as static files (required for ES modules)
+# Any static server works; .js is sent as JavaScript, unlike .tsx
+python -m http.server 8080
+# then open http://localhost:8080/
+
+# Generate HTML documentation with the light theme
+goweb render main.md --var debug=true --var APP_NAME=&quot;Todo App&quot; -o docs.html
+</code></pre>
+<h2 id="how-the-chunks-are-organized">How the chunks are organized</h2>
+<p>The example is split across four files (open them as markdown if you prefer the raw book):</p>
+<ul>
+<li><strong><a href="main.md">main.md</a></strong> (this file) — entry point with imports, overview, and the LICENSE chunk</li>
+<li><strong><a href="app.md">app.md</a></strong> — the room: state, filters, and how the page is hung</li>
+<li><strong><a href="components.md">components.md</a></strong> — the three gestures: add, list, row</li>
+<li><strong><a href="config.md">config.md</a></strong> — the HTML envelope and a small <code>package.json</code></li>
+</ul>
+<p>Each file exports named chunks that are resolved during tangling. The <code>&lt;&lt;import &quot;file.md&quot;&gt;&gt;&gt;</code> directive merges the imported file's chunks into the namespace, so chunks defined in <code>components.md</code> can be referenced from <code>app.md</code>.</p>
+<h2 id="chunk-overriding">Chunk overriding</h2>
+<p>The <code>TodoList</code> component chunk is tagged with <code>override-demo</code>. If you define a chunk with the same name
+in another file and mark it with <code>&lt;&lt;override&gt;&gt;</code>, goweb will replace the original definition.
+This is useful for swapping implementations without modifying the original source:</p>
+<pre><code class="language-bash"># Create an override chunk
+echo ' file: src/components/todo-list.js
+export function TodoList() { return null; }
+&gt;&gt;' &gt; override.md
+
+# Tangle with override
+goweb tangle --var APP_NAME=&quot;Todo App&quot; main.md override.md
+</code></pre>
+<h2 id="project-structure">Project Structure</h2>
+<pre><code>examples/preact-todo/
+├── main.md             # Entry point (this file)
+├── app.md              # App component definition
+├── components.md       # UI sub-components
+├── config.md           # Build config files
+├── package.json        # Tangled metadata
+├── index.html          # HTML + import map
+└── src/
+    ├── main.js         # Preact mount (browser ES module)
+    ├── app.js          # App component
+    ├── style.css       # lit-lang.org-inspired styles
+    └── components/
+        ├── add-todo.js
+        ├── todo-list.js
+        └── todo-item.js
+</code></pre>
+<h2 id="conditional-compilation-with-a-hrefchunk-ifcodeltltifgtgtcodea">Conditional compilation with <a href="#chunk-if"><code>&lt;&lt;if&gt;&gt;</code></a></h2>
+<p>The <code>app.md</code> file uses <code>&lt;&lt;if debug&gt;&gt;</code> / <code>&lt;&lt;end&gt;&gt;</code> directives to conditionally include
+<code>console.log</code> statements. When <code>--var debug=true</code> is passed, the debug chunks are included;
+otherwise they are stripped. This allows a single source to produce both production
+and development builds.</p>
+<h2 id="tags-graphs-and-talking-to-a-model">Tags, graphs, and talking to a model</h2>
+<p>A literate program is a pile of named pieces. After a while the pile is
+large enough that <em>you</em> still know the plot, but a new reader — human or
+model — does not. Two tools keep the plot visible: <strong>tags</strong> on the chunks,
+and a <strong>graph</strong> of who points at whom.</p>
+<h3 id="tags-are-shelves-not-comments">Tags are shelves, not comments</h3>
+<p>A tag is a word you put on a chunk header:</p>
+<pre><code></code></pre>
+<p>It does not change the running app. It is a label for later. In this book
+we use four shelves:</p>
+<ul>
+<li><strong><code>component</code></strong> — anything that draws: <a href="#chunk-add-todo-component"><code>&lt;&lt;add-todo-component&gt;&gt;</code></a>,
+<a href="#chunk-todo-item-component"><code>&lt;&lt;todo-item-component&gt;&gt;</code></a>, <a href="#chunk-todo-list-component"><code>&lt;&lt;todo-list-component&gt;&gt;</code></a>, <a href="#chunk-app-js"><code>&lt;&lt;app-js&gt;&gt;</code></a></li>
+<li><strong><code>config</code></strong> — the envelope: <a href="#chunk-index-html"><code>&lt;&lt;index-html&gt;&gt;</code></a>, <a href="#chunk-package-json"><code>&lt;&lt;package-json&gt;&gt;</code></a></li>
+<li><strong><code>debug</code></strong> — the <code>console.log</code> asides, only present when <code>--var debug=true</code></li>
+<li><strong><code>meta</code></strong> — the license and other paperwork</li>
+</ul>
+<p><code>goweb tangle --match component main.md</code> writes <em>only</em> the chunks on that
+shelf. You can keep a full program in one tree and still extract “just the
+UI” or “just the config” the way you would pull a chapter, not the whole
+volume.</p>
+<h3 id="the-graph-is-the-table-of-contents-for-dependencies">The graph is the table of contents for dependencies</h3>
+<p><code>goweb index main.md</code> prints every chunk, where it was defined, and who
+mentions it. <code>goweb graph main.md</code> prints the same relationships as
+<a href="https://graphviz.org/">Graphviz</a> DOT — boxes and arrows:</p>
+<pre><code class="language-bash">goweb index main.md
+goweb graph main.md | dot -Tsvg -o deps.svg
+goweb graph --cluster main.md | dot -Tpng -o deps.png
+</code></pre>
+<p><code>--cluster</code> groups chunks by the file they tangle into, so you see
+<em>neighborhoods</em> (everything that becomes <code>src/app.js</code>) instead of a hairball.
+An arrow <code>A → B</code> means A’s body contains <code>&lt;&lt;B&gt;&gt;</code>. That is the same
+cross-reference the HTML uses when you click a chunk name on this page.</p>
+<p>If two chunks should talk and the graph shows no edge, the book is lying or
+unfinished. If the graph has a cycle, tangle will refuse — the story cannot
+be put in order.</p>
+<h3 id="why-this-helps-an-llm">Why this helps an LLM</h3>
+<p>A language model does not wander a repo the way you do. It sees what you
+put in the prompt. A literate program plus tags and a graph is a polite
+way to pack that prompt:</p>
+<ol>
+<li><strong>Start with the map, not the files.</strong> Paste <code>goweb index</code> or <code>goweb graph</code>
+first. The model learns the cast of characters (<code>&lt;&lt;app-js&gt;&gt;</code> uses
+<code>&lt;&lt;app-add-todo&gt;&gt;</code>) without eating every line of JavaScript.</li>
+<li><strong>Fetch by shelf.</strong> “Here are all <code>component</code> chunks” is a smaller,
+cleaner context than “here is <code>src/</code>.” Use <code>--match</code> to tangle or copy
+only that shelf into the conversation.</li>
+<li><strong>Follow one edge.</strong> To change the add form, you do not dump the
+program. You give <a href="#chunk-add-todo-component"><code>&lt;&lt;add-todo-component&gt;&gt;</code></a> and the one node that calls
+it (<a href="#chunk-app-js"><code>&lt;&lt;app-js&gt;&gt;</code></a>). The graph tells you there is nothing else.</li>
+<li><strong>Keep the prose.</strong> The sentences around a chunk are already the
+rationale a model otherwise has to invent. Weaving or rendering this
+book <em>is</em> documentation context — not a second artifact you forgot to
+write.</li>
+<li><strong>Name the task in tags.</strong> A future <code>tags: llm, retrieval</code> or
+<code>tags: api</code> shelf can mark the pieces you always want in a system
+prompt. The program becomes its own retrieval index.</li>
+</ol>
+<p>In short: tags say <em>what kind of thing</em> a chunk is. The graph says <em>what
+it is for</em>. Together they let you hand a model a chapter instead of a
+warehouse.</p>
+<h2 id="license">License</h2>
+<p><a id="chunk-license"></a>
+<strong><a href="#chunk-license"><code>&lt;&lt;license&gt;&gt;</code></a></strong> · <code>LICENSE</code></p>
+<pre><code>Todo App
+Copyright (c) 2026 Xyzzy Apps &lt;xyzzyapps@gmail.com&gt;
+
+This work is licensed under the Creative Commons Attribution-ShareAlike
+4.0 International License.
+
+https://creativecommons.org/licenses/by-sa/4.0/
+</code></pre>
+
+  </article>
+  
+  <details class="chunk-table" id="chunks">
+    <summary>Code chunks (17)</summary>
+    <table>
+      <tr><th>Name</th><th>File</th><th>Tags</th><th>Line</th></tr>
+      
+      <tr><td><a href="#chunk-style-css"><code>&lt;&lt;style-css&gt;&gt;</code></a></td><td>src/style.css</td><td>component</td><td>42</td></tr>
+      
+      <tr><td><a href="#chunk-main-js"><code>&lt;&lt;main-js&gt;&gt;</code></a></td><td>src/main.js</td><td>component</td><td>183</td></tr>
+      
+      <tr><td><a href="#chunk-app-js"><code>&lt;&lt;app-js&gt;&gt;</code></a></td><td>src/app.js</td><td>component</td><td>194</td></tr>
+      
+      <tr><td><a href="#chunk-app-add-todo"><code>&lt;&lt;app-add-todo&gt;&gt;</code></a></td><td></td><td></td><td>249</td></tr>
+      
+      <tr><td><a href="#chunk-app-toggle-todo"><code>&lt;&lt;app-toggle-todo&gt;&gt;</code></a></td><td></td><td></td><td>261</td></tr>
+      
+      <tr><td><a href="#chunk-app-delete-todo"><code>&lt;&lt;app-delete-todo&gt;&gt;</code></a></td><td></td><td></td><td>270</td></tr>
+      
+      <tr><td><a href="#chunk-app-filter-todos"><code>&lt;&lt;app-filter-todos&gt;&gt;</code></a></td><td></td><td></td><td>277</td></tr>
+      
+      <tr><td><a href="#chunk-app-todo-ul"><code>&lt;&lt;app-todo-ul&gt;&gt;</code></a></td><td></td><td></td><td>285</td></tr>
+      
+      <tr><td><a href="#chunk-debug-log-add"><code>&lt;&lt;debug-log-add&gt;&gt;</code></a></td><td></td><td>debug</td><td>302</td></tr>
+      
+      <tr><td><a href="#chunk-debug-log-toggle"><code>&lt;&lt;debug-log-toggle&gt;&gt;</code></a></td><td></td><td>debug</td><td>306</td></tr>
+      
+      <tr><td><a href="#chunk-debug-log-delete"><code>&lt;&lt;debug-log-delete&gt;&gt;</code></a></td><td></td><td>debug</td><td>310</td></tr>
+      
+      <tr><td><a href="#chunk-todo-list-component"><code>&lt;&lt;todo-list-component&gt;&gt;</code></a></td><td>src/components/todo-list.js</td><td>component, override-demo</td><td>345</td></tr>
+      
+      <tr><td><a href="#chunk-add-todo-component"><code>&lt;&lt;add-todo-component&gt;&gt;</code></a></td><td>src/components/add-todo.js</td><td>component</td><td>361</td></tr>
+      
+      <tr><td><a href="#chunk-todo-item-component"><code>&lt;&lt;todo-item-component&gt;&gt;</code></a></td><td>src/components/todo-item.js</td><td>component</td><td>412</td></tr>
+      
+      <tr><td><a href="#chunk-package-json"><code>&lt;&lt;package-json&gt;&gt;</code></a></td><td>package.json</td><td>config</td><td>457</td></tr>
+      
+      <tr><td><a href="#chunk-index-html"><code>&lt;&lt;index-html&gt;&gt;</code></a></td><td>index.html</td><td>config</td><td>468</td></tr>
+      
+      <tr><td><a href="#chunk-license"><code>&lt;&lt;license&gt;&gt;</code></a></td><td>LICENSE</td><td>meta</td><td>745</td></tr>
+      
+    </table>
+  </details>
+  
+</main>
+<footer>
+  <h2>goweb</h2>
+  <p>Written with DeepSeek and Grok 4.6. Copyright Xyzzy Apps &lt;xyzzyapps@gmail.com&gt;. Generated by <a href="https://github.com/xyzzyapps/goweb">goweb</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

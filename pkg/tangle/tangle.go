@@ -14,8 +14,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/manic/goweb/pkg/graph"
-	"github.com/manic/goweb/pkg/parser"
+	"github.com/xyzzyapps/goweb/pkg/graph"
+	"github.com/xyzzyapps/goweb/pkg/parser"
 )
 
 // SessionManager manages persistent processes for session-based execution.
