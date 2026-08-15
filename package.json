@@ -1,0 +1,8 @@
+{
+  "name": "Todo App",
+  "version": "1.0.0",
+  "author": "Xyzzy Apps",
+  "private": true,
+  "type": "module",
+  "description": "goweb literate example — Preact + htm, no bundler"
+}

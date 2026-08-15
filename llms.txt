@@ -1,0 +1,33 @@
+# goweb
+
+> Noweb-style literate programming for GitHub Flavored Markdown.
+
+goweb lets you write documentation and code in `.md` files, then tangle source, weave clean markdown, or render HTML.
+
+Written with DeepSeek and Grok 4.6 (xAI).
+
+## Links
+
+- Source: https://github.com/xyzzyapps/goweb
+- Docs (this site): https://xyzzyapps.github.io/goweb/
+- Spec: https://github.com/xyzzyapps/goweb/blob/master/SPEC.md
+- README: https://github.com/xyzzyapps/goweb/blob/master/README.md
+
+## Commands
+
+- `goweb tangle` — extract code chunks
+- `goweb weave` — clean markdown
+- `goweb render` — HTML (lit-lang.org palette, no underlines)
+- `goweb index` / `goweb graph` — chunk map (use as LLM context before dumping files)
+- `goweb tangle --match tag` — one tag shelf
+- `goweb sync` / `goweb reverse` / `goweb init` / `goweb lsp`
+
+License: CC BY-SA 4.0.
+
+## Syntax (brief)
+
+- `<<name>>=` … `>>` defines a chunk (`file:`, `pipe:`, `exec:`, `session:`, `tags:`, `override`)
+- `<<name>>` references a chunk (weave/render: in-document link)
+- `<<import "file.md">>` / `<<override "file.md">>` — `<<override>>` is not a chunk
+- `<<if var>>` / `<<elif>>` / `<<else>>` / `<<end>>`
+- `{{var}}`; `--var`; unset AUTHOR/EMAIL/REPO from git config
