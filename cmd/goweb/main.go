@@ -149,6 +149,7 @@ Examples:
 	registerSyncCmd()
 	registerRenderCmd()
 	registerLspCmd()
+	registerFillCmd()
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

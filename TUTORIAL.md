@@ -292,6 +292,24 @@ goweb tangle --match component program.md
 
 Unset `AUTHOR`, `EMAIL`, and `REPO` come from `git config`. See [SPEC.md](SPEC.md) and the example book in `examples/preact-todo/docs.html`.
 
+## 16. AI holes
+
+Mark a stub `ai:open`. Fill rewrites the **Markdown**. Then seal so later fills skip it.
+
+```
+<<add>>= file: add.js ai:open
+function add() {}
+>>
+```
+
+```bash
+goweb fill --dry-run program.md
+goweb fill --mock program.md
+goweb seal program.md
+```
+
+`--mock` reads `mock/<chunk-name>.txt` next to the source file. Unmarked chunks are never filled.
+
 ## Summary
 
 | Command | Description |
@@ -306,7 +324,9 @@ Unset `AUTHOR`, `EMAIL`, and `REPO` come from `git config`. See [SPEC.md](SPEC.m
 | `goweb index file.md` | Cross-reference table |
 | `goweb graph file.md` | Graphviz DOT dependency graph |
 | `goweb sync file.md` | Apply tangled edits back (needs `--line-directives`) |
-| `goweb reverse files…` | Wrap source files as chunks |
+| `goweb reverse files-or-dirs…` | Wrap source files (or a folder) as chunks |
+| `goweb fill file.md` | Fill `ai:open` chunks (`--mock` or a model; `--dry-run` lists) |
+| `goweb seal file.md` | `ai:filled` → `ai:sealed` |
 | `goweb tangle --var key=val` | Set variables for conditionals/`{{var}}` |
 | `goweb tangle --line-directives` | Add source-location comments |
 | `goweb tangle --output-dir ./out` | Write output to a subdirectory |

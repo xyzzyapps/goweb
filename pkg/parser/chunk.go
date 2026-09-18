@@ -9,6 +9,16 @@ import (
 	"unicode"
 )
 
+// ValidAI reports whether v is open, filled, or sealed.
+func ValidAI(v string) error {
+	switch v {
+	case "open", "filled", "sealed":
+		return nil
+	default:
+		return fmt.Errorf("ai must be open, filled, or sealed, got %q", v)
+	}
+}
+
 // ChunkAnchor is the HTML id used so weaved/rendered docs can link to a chunk.
 func ChunkAnchor(name string) string {
 	var b strings.Builder
@@ -62,6 +72,10 @@ type Chunk struct {
 	// any previous definition with the same name.
 	Override bool
 
+	// AI is the hole state from ai:open|filled|sealed. Empty means unmarked
+	// (never a fill candidate).
+	AI string
+
 	// Line is the 1-based source line where this chunk was defined.
 	Line int
 
@@ -86,6 +100,9 @@ func (c *Chunk) Merge(other *Chunk) {
 		c.Body += "\n" + other.Body
 	} else if other.Body != "" {
 		c.Body = other.Body
+	}
+	if c.AI == "" && other.AI != "" {
+		c.AI = other.AI
 	}
 	if c.Language == "" && other.Language != "" {
 		c.Language = other.Language

@@ -57,6 +57,7 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 					}
 				}
 			}
+			chunk.AI = chunkDef.ai
 			chunks = addChunk(chunks, chunk)
 				chunkDef = nil
 			} else if kind >= 2 {
@@ -133,6 +134,11 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 					chunkDef.tags = v
 				case "override":
 					chunkDef.override = v == "true"
+				case "ai":
+					if err := ValidAI(v); err != nil {
+						return nil, fmt.Errorf("%s:%d: %w", sourcePath, lineNum, err)
+					}
+					chunkDef.ai = v
 				}
 			}
 			// If overrideMode is active, this chunk overrides any existing.
@@ -161,6 +167,7 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 			Line:     chunkDef.startLine,
 			Source:   sourcePath,
 			Override: chunkDef.override,
+			AI:       chunkDef.ai,
 		}
 		chunk.File = chunkDef.file
 		chunk.PipeCmd = chunkDef.pipeCmd
@@ -169,6 +176,14 @@ func ParseLines(lines []string, sourcePath string) (*Document, error) {
 
 	// Auto-detect language from file: extension for chunks without a language.
 	inferLanguages(chunks)
+
+	for _, c := range chunks {
+		if c.AI != "" {
+			if err := ValidAI(c.AI); err != nil {
+				return nil, fmt.Errorf("%s:%d: %w", c.Source, c.Line, err)
+			}
+		}
+	}
 
 	doc.Chunks = chunks
 	return doc, nil
@@ -185,6 +200,7 @@ type chunkDefinition struct {
 	sessionName string
 	tags        string // comma-separated
 	override    bool
+	ai          string
 	startLine   int
 }
 
@@ -377,6 +393,8 @@ func extractChunksFromFence(fence *fencedBlock, sourcePath string) []*Chunk {
 					}
 				case "override":
 					chunk.Override = v == "true"
+				case "ai":
+					chunk.AI = v
 				}
 			}
 

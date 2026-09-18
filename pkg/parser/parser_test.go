@@ -54,6 +54,11 @@ func TestParseChunkHeader(t *testing.T) {
 			wantName: "main",
 			wantAtt:  map[string]string{"override": "true"},
 		},
+		{
+			line:     "<<add>>= file: add.js ai:open",
+			wantName: "add",
+			wantAtt:  map[string]string{"file": "add.js", "ai": "open"},
+		},
 	}
 	for _, tt := range tests {
 		gotName, gotAtt := parseChunkHeader(tt.line)

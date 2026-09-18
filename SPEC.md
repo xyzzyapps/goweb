@@ -18,9 +18,11 @@ goweb is a noweb-style literate programming tool on GitHub Flavored Markdown. A 
 | `sync` | Apply edits from tangled files back into `.md` (needs `#line` / `//line`) |
 | `index` | Cross-reference table of chunks |
 | `graph` | Graphviz DOT dependency graph |
-| `reverse` | Wrap existing source files as chunks |
+| `reverse` | Wrap files or a directory as chunks |
 | `init` | Scaffold `program.md` |
 | `lsp` | JSON-RPC language server over stdin/stdout |
+| `fill` | Rewrite `ai:open` chunk bodies in `.md` (model or `--mock`) |
+| `seal` | `ai:filled` → `ai:sealed` (alias `accept`) |
 
 Module path: `github.com/xyzzyapps/goweb`. Go version: see `go.mod`.
 
@@ -63,6 +65,7 @@ body
 | `session: name` | Share an exec process across chunks (see SessionManager) |
 | `tags: a,b` | Labels; `--match` filters tangle by tag |
 | `override` | Replace any earlier chunk of the same name |
+| `ai:open` / `ai:filled` / `ai:sealed` | Hole for `goweb fill` / `goweb seal`. Unmarked chunks are never filled. Tangle does not call a model. |
 
 Language for weave/render fences: fenced info string, else inferred from `file:` extension (`.tsx` → TypeScript, `.css` → CSS, …).
 
@@ -126,7 +129,7 @@ In **prose**, a non-reserved `<<name>>` becomes an HTML link to `#chunk-…` (`p
 .md  →  preproc (import, if/elif/else/end, frontmatter)
      →  parser (fences + <<name>>= … >>)
      →  graph (refs, topo sort, cycles)
-     →  tangle | weave | render | index | graph | sync
+     →  tangle | weave | render | index | graph | sync | fill | seal
 ```
 
 **Invariants**
@@ -137,6 +140,7 @@ In **prose**, a non-reserved `<<name>>` becomes an HTML link to `#chunk-…` (`p
 4. Weave never writes binary; it produces markdown. Prose `<<name>>` becomes a link to `#chunk-…`; each definition gets that anchor. Chunk bodies that reference other chunks get a “Uses …” line.
 5. Render weaves first, then Goldmark (GFM + auto heading IDs + unsafe HTML).
 6. `sync` is only reliable if tangle was run with `--line-directives`.
+7. `tangle` / `weave` / `render` never construct an LLM client. Fill rewrites `.md` only. Fill never sets `ai:sealed`. Unmarked chunks are never fill candidates.
 
 ---
 
@@ -159,6 +163,10 @@ In **prose**, a non-reserved `<<name>>` becomes an HTML link to `#chunk-…` (`p
 - Builds name → deps from `<<ref>>`.
 - Kahn topological sort; cycle error.
 - Used by tangle resolution.
+
+### `pkg/fill`
+
+- `Fill` / `Seal`. `--mock` reads `<entry-dir>/mock/<chunk>.txt`. HTTP is OpenAI Chat Completions (`OPENAI_API_KEY` / `XAI_API_KEY` / `GOWEB_*`).
 
 ### `pkg/tangle`
 
@@ -183,7 +191,8 @@ Cobra root. Subcommands live in:
 | `render_cmd.go` | `render`, site mode, `PageData` |
 | `index_cmd.go` | `index` |
 | `graph_cmd.go` | `graph` (`--cluster` by output file) |
-| `reverse_cmd.go` | `reverse` |
+| `reverse_cmd.go` | `reverse` (files or directory walk) |
+| `fill_cmd.go` | `fill`, `seal` / `accept` |
 | `sync_cmd.go` | `sync` |
 | `lsp_cmd.go` | `lsp` |
 
@@ -207,7 +216,9 @@ goweb render <source.md> [...]
 
 goweb index <source.md>   --var
 goweb graph <source.md>   --var --cluster
-goweb reverse <files...>  --output
+goweb reverse <file-or-dir...>  --output
+goweb fill <source.md>    --var --mock --mock-dir --model --name --refill --dry-run --strict --context
+goweb seal <source.md>    --var --name --empty-ok --dry-run
 goweb sync <source.md>    --var --dry-run
 goweb init [directory]
 goweb lsp

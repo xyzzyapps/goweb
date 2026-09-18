@@ -24,6 +24,9 @@ Binary: `goweb` (this repo: `go build -o goweb.exe ./cmd/goweb`). Language contr
 | Scaffold | `goweb init [dir]` |
 | Xref / DOT | `goweb index source.md` / `goweb graph source.md` |
 | Wrap existing files | `goweb reverse a.go b.js > program.md` |
+| Wrap a folder | `goweb reverse src/ -o program.md` |
+| Fill `ai:open` holes | `goweb fill [--mock] source.md` |
+| Freeze filled holes | `goweb seal source.md` |
 
 Always pass `--var` the same way for tangle, weave, render, and sync.
 
@@ -32,7 +35,7 @@ If unset, these are filled from git config: `AUTHOR` ‚Üê `user.name`, `EMAIL` ‚Ü
 ## Write sources
 
 ```
-<<name>>= file: path/out.js pipe: cmd exec: cmd session: s tags: a,b override
+<<name>>= file: path/out.js pipe: cmd exec: cmd session: s tags: a,b override ai:open
 body may contain <<other>> and {{VAR}}
 >>
 ```
@@ -68,3 +71,4 @@ Default HTML theme is [lit-lang.org](https://lit-lang.org/) (amber `#ffcd42`, of
 - `pipe:` / `exec:` need the command on `PATH` (`--pipe-dir` sets cwd).
 - Opening `index.html` as `file://` breaks ES modules; use a static server.
 - Do not commit `draft/` or `.todo/`. License is CC BY-SA 4.0.
+- `goweb fill` only rewrites `ai:open` (and `ai:filled` with `--refill`). Never auto-seal. Tangle does not call a model.

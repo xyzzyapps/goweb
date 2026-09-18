@@ -31,9 +31,10 @@ This codebase was written with **DeepSeek** and **Grok 4.6** (xAI). See [SPEC.md
 - **Cross-reference index** — `goweb index` prints a table of all chunks and their references
 - **Dependency diagrams** — `goweb graph` outputs Graphviz DOT (`--cluster` by output file)
 - **Tags** — `tags:` shelves; `goweb tangle --match` extracts one shelf (good LLM context with `index`/`graph`)
-- **Source → literate** — `goweb reverse` converts source files into `.md` chunks
+- **Source → literate** — `goweb reverse` converts files or a folder into `.md` chunks
 - **Project scaffolding** — `goweb init` creates a new literate program skeleton
 - **YAML frontmatter** — `--- key: value ---` config at the top of `.md` files
+- **AI holes** — `ai:open` → `goweb fill` → `ai:filled` → `goweb seal` → `ai:sealed`
 
 ## Install
 
@@ -69,6 +70,7 @@ Attributes:
 | `session: name` | Share an exec process across chunks |
 | `tags: a,b` | Labels; `goweb tangle --match` filters by tag |
 | `override` | Replace any earlier chunk of the same name |
+| `ai:open` / `filled` / `sealed` | Hole for `goweb fill` / `goweb seal` |
 
 Chunks can appear inside fenced code blocks or directly in markdown.
 
@@ -167,6 +169,32 @@ goweb graph --cluster program.md | dot -Tpng -o deps.png
 
 `--cluster` groups chunks by the file they tangle into.
 
+### Fill and seal (AI holes)
+
+Only chunks with `ai:open` are fill candidates. Tangle never calls a model. Fill never sets `ai:sealed`.
+
+```
+<<add>>= file: add.js ai:open
+function add() {}
+>>
+```
+
+```bash
+goweb fill --dry-run program.md          # list holes; no HTTP, no writes
+goweb fill --mock program.md             # mock/<chunk>.txt
+goweb fill --model grok-4.5 program.md   # OpenAI-compatible Chat Completions
+goweb seal program.md                    # ai:filled → ai:sealed
+```
+
+Keys from `OPENAI_API_KEY` / `XAI_API_KEY` / `GOWEB_API_KEY` (and matching `*_BASE_URL` / `*_MODEL`).
+
+### Reverse (files or a folder)
+
+```bash
+goweb reverse main.go lib.go > program.md
+goweb reverse src/ -o program.md
+```
+
 The default theme follows [lit-lang.org](https://lit-lang.org/):
 - System UI fonts, amber `#ffcd42` primary, dark footer, no link underlines
 - Hard offset shadows on tables, asides, and code blocks
@@ -198,13 +226,16 @@ source.md
 └─────────┬───────────┘
           │
           ├──► Tangle ──► output files
-          │    (pkg/tangle)   (resolves refs, applies pipes)
+          │    (pkg/tangle)   (resolves refs, applies pipes; never calls a model)
           │
           ├──► Weave  ──► clean markdown
-          │    (pkg/weave)    (strips goweb syntax, wraps code in fences)
+          │    (pkg/weave)
           │
-          └──► Render ──► HTML documentation
-               (cmd/goweb)     (light theme, syntax highlighting)
+          ├──► Render ──► HTML documentation
+          │    (cmd/goweb)
+          │
+          └──► Fill / seal ──► rewrite ai:* chunks in the .md
+               (pkg/fill)
 ```
 
 ## Example
@@ -238,11 +269,12 @@ The rendered HTML is published on GitHub Pages (`gh-pages`) with SEO and AEO met
 ## Project Structure
 
 ```
-cmd/goweb/            CLI (cobra): tangle, weave, render, index, graph, reverse, sync, lsp, init
+cmd/goweb/            CLI (cobra): tangle, weave, render, index, graph, reverse, fill, seal, sync, lsp, init
 pkg/parser/           Chunk, Document, markdown/noweb parser
 pkg/preproc/          Imports, conditionals, frontmatter
 pkg/graph/            Dependency graph, topological sort
 pkg/tangle/           Reference expansion, pipes, exec, file output
+pkg/fill/             AI holes: fill (mock or HTTP) and seal
 pkg/weave/            Strip goweb syntax → clean markdown
 examples/preact-todo/ Single example (Preact + htm, no bundler)
 SPEC.md               Language and architecture spec (agents + humans)
